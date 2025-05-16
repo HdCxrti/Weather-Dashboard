@@ -4,7 +4,7 @@ import SearchBar from "@/components/SearchBar";
 import CurrentWeather from "@/components/CurrentWeather";
 import WeeklyForecast from "@/components/WeeklyForecast";
 import OtherCities from "@/components/OtherCities";
-import { WeatherData } from "@/types/weather";
+import { WeatherData, OtherCityWeather } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
 import { Globe } from "lucide-react";
 
@@ -14,27 +14,13 @@ export default function Home() {
   const { toast } = useToast();
 
   // Fetch current weather and forecast data
-  const { data: weatherData, isLoading: isWeatherLoading } = useQuery<WeatherData>({
+  const { data: weatherData, isLoading: isWeatherLoading } = useQuery({
     queryKey: [`/api/weather?city=${city}&units=${units}`],
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error fetching weather data",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-      });
-    },
   });
 
   // Fetch other cities weather data
   const { data: otherCitiesData, isLoading: isOtherCitiesLoading } = useQuery({
     queryKey: ["/api/other-cities", units],
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error fetching other cities data",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-      });
-    },
   });
 
   const handleSearch = (searchCity: string) => {
