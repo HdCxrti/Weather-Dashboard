@@ -3,12 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import CurrentWeather from "@/components/CurrentWeather";
 import WeeklyForecast from "@/components/WeeklyForecast";
-import OtherCities from "@/components/OtherCities";
+import FavoriteCities from "@/components/FavoriteCities";
+import RadarMap from "@/components/RadarMap";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { geocodeCityPreferUS } from "@/lib/api";
 
 // Mock data for demonstration when API key isn't working
 const mockCurrentWeather: CurrentWeatherData = {
@@ -96,7 +98,8 @@ function toTitleCase(str: string): string {
     .join(' ');
 }
 
-export default function Home() {  const [city, setCity] = useState<string>("New York");
+export default function Home() {  
+  const [city, setCity] = useState<string>("New York");
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
   const { toast } = useToast();
 
@@ -110,9 +113,27 @@ export default function Home() {  const [city, setCity] = useState<string>("New 
     queryKey: ["/api/other-cities", units],
   });
 
-  const handleSearch = (searchCity: string) => {
+  const handleSearch = async (searchCity: string) => {
     if (searchCity.trim()) {
-      setCity(searchCity);
+      let cityQuery = searchCity;
+      // Prefer US for ambiguous cities
+      const geo = await geocodeCityPreferUS(searchCity);
+      if (geo && geo.display_name && geo.display_name.includes('United States')) {
+        // Use the most specific available: City, State, US if state is present, else City, US
+        const cityName = geo.display_name.split(',')[0].trim();
+        const state = geo.address && (geo.address.state || geo.address.region);
+        if (state) {
+          cityQuery = `${cityName}, ${state}, US`;
+        } else {
+          cityQuery = `${cityName}, US`;
+        }
+      }
+      setCity(cityQuery);
+      // Dispatch event so RadarMap updates
+      if (typeof window !== 'undefined') {
+        const event = new CustomEvent('favoriteCitySelected', { detail: searchCity });
+        window.dispatchEvent(event);
+      }
     }
   };
   const toggleUnits = () => {
@@ -135,6 +156,60 @@ export default function Home() {  const [city, setCity] = useState<string>("New 
     'current' in weatherData && 'daily' in weatherData;
   
   const hasError = weatherError || otherCitiesError;
+
+  // Add state for favorite cities (with weather data)
+  const [favoriteCities, setFavoriteCities] = useState<OtherCityWeather[]>(() => {
+    const stored = localStorage.getItem("favoriteCities");
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Save to localStorage when favoriteCities changes
+  useEffect(() => {
+    localStorage.setItem("favoriteCities", JSON.stringify(favoriteCities));
+  }, [favoriteCities]);
+
+  // Add current city to favorites
+  const addCurrentToFavorites = () => {
+    let cityWeather: OtherCityWeather | null = null;
+    let state = undefined;
+    // Try to get state from weatherData if available
+    if (hasRealWeatherData) {
+      // WeatherAPI returns state/region as weatherData.current.state or weatherData.current.region
+      state = (weatherData as any).current.state || (weatherData as any).current.region || (weatherData as any).current.province;
+      cityWeather = {
+        name: city,
+        country: (weatherData as any).current.sys.country,
+        temp: (weatherData as any).current.main.temp,
+        weather: (weatherData as any).current.weather,
+        state: state
+      };
+    } else {
+      cityWeather = {
+        name: city,
+        country: mockCurrentWeather.sys.country,
+        temp: mockCurrentWeather.main.temp,
+        weather: mockCurrentWeather.weather,
+        state: undefined
+      };
+    }
+    if (!favoriteCities.some(c => c.name.toLowerCase() === cityWeather!.name.toLowerCase())) {
+      setFavoriteCities([...favoriteCities, cityWeather!]);
+    }
+  };
+
+  const removeFavorite = (name: string) => {
+    setFavoriteCities(favoriteCities.filter(city => city.name !== name));
+  };
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        setCity(e.detail);
+      }
+    };
+    window.addEventListener('favoriteCitySelected', handler);
+    return () => window.removeEventListener('favoriteCitySelected', handler);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -160,17 +235,27 @@ export default function Home() {  const [city, setCity] = useState<string>("New 
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">        <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
             {hasRealWeatherData ? (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
                 <div className="p-6">
                   <h2 className="text-xl font-medium">
-                    Forecast in {toTitleCase(city)}, {(weatherData as any).current.sys.country}
+                    Forecast in {toTitleCase(city)}
+                    {['moorefield', 'hedgesville', 'martinsburg', 'beckley'].includes(city.trim().toLowerCase())
+                      ? ', United States of America'
+                      : ((weatherData as any)?.current?.sys?.country && ["US", "USA"].includes((weatherData as any)?.current?.sys?.country.toUpperCase()))
+                        ? ', United States of America'
+                        : ((weatherData as any)?.current?.sys?.country ? `, ${(weatherData as any)?.current?.sys?.country}` : '')}
                   </h2>
                   {/* Use theme-consistent text color */}
                   <p className="text-muted-foreground mb-6">
                     {formatDate()}
                   </p>
+                  
+                  <Button className="mb-4" onClick={addCurrentToFavorites}>
+                    Add to Favorites
+                  </Button>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Pass theme prop to child components */}                    <CurrentWeather 
@@ -219,16 +304,15 @@ export default function Home() {  const [city, setCity] = useState<string>("New 
                   />
                 </div>
               </div>
-            )}
+            )}            {/* Radar Map Section */}
+            <div className="mt-6">
+              <h3 className="font-medium mb-2">Live Radar</h3>
+              <RadarMap units={units} />
+            </div>
           </div>
           
-          {/* Update OtherCities component */}          <OtherCities 
-            citiesData={!otherCitiesError && otherCitiesData ? 
-              (otherCitiesData as OtherCityWeather[]) : 
-              mockOtherCities} 
-            isLoading={isOtherCitiesLoading && !otherCitiesError}
-            units={units}
-          />        </div>
+          {/* Update FavoriteCities component */}          <FavoriteCities favorites={favoriteCities} onRemove={removeFavorite} />
+        </div>
       </div>
     </div>
   );

@@ -92,6 +92,16 @@ export interface DailyForecast {
   uvi: number;
 }
 
+export interface HourlyForecastData {
+  time: number; // timestamp in seconds
+  temp: number;
+  feels_like?: number;
+  humidity?: number;
+  wind_speed?: number;
+  weather: WeatherCondition[];
+  chance_of_rain?: number;
+}
+
 export interface WeatherData {
   lat: number;
   lon: number;
@@ -99,6 +109,7 @@ export interface WeatherData {
   timezone_offset: number;
   current: CurrentWeatherData;
   daily: DailyForecast[];
+  hourly?: HourlyForecastData[]; // Optional hourly forecast data
 }
 
 export interface OtherCityWeather {
@@ -106,4 +117,5 @@ export interface OtherCityWeather {
   country: string;
   temp: number;
   weather: WeatherCondition[];
+  state?: string; // Optional state property
 }
