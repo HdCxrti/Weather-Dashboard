@@ -16,21 +16,21 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 interface FavoriteCitiesProps {
-  citiesData: OtherCityWeather[];
-  isLoading: boolean;
-  units: "metric" | "imperial";
+  citiesData?: OtherCityWeather[];
+  isLoading?: boolean;
+  units?: "metric" | "imperial";
   onAddFavorite?: (cityName: string) => void;
-  favorites?: string[];
-  onFavoritesChange?: (favorites: string[]) => void;
+  favorites?: OtherCityWeather[];
+  onRemove?: (name: string) => void;
 }
 
 export default function FavoriteCities({ 
-  citiesData, 
-  isLoading, 
-  units, 
+  citiesData = [], 
+  isLoading = false, 
+  units = "imperial", 
   onAddFavorite,
-  favorites: externalFavorites,
-  onFavoritesChange 
+  favorites = [],
+  onRemove
 }: FavoriteCitiesProps) {
   const tempUnit = units === "imperial" ? "F" : "C";
   const { toast } = useToast();
@@ -40,30 +40,32 @@ export default function FavoriteCities({
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
-  // Use either external favorites (controlled mode) or internal favorites (uncontrolled mode)
-  const isControlled = externalFavorites !== undefined && onFavoritesChange !== undefined;
-  const favorites = isControlled ? externalFavorites : internalFavorites;
+  // Handle click event for selecting a city
+  const handleCityClick = (city: string) => {
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('favoriteCitySelected', { detail: city });
+      window.dispatchEvent(event);
+    }
+  };
   
-  // Load favorite cities from localStorage on mount
+  // Use either external favorites (controlled mode) or internal favorites (uncontrolled mode)
+  const isControlled = favorites !== undefined && onRemove !== undefined;
+  const favoriteCities = isControlled ? favorites : internalFavorites.map(name => ({
+    name,
+    country: '',
+    temp: 0,
+    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '' }]
+  }));
+  
+  // Load favorites from localStorage only in uncontrolled mode
   useEffect(() => {
     if (!isControlled) {
       const storedFavorites = localStorage.getItem("favoriteCities");
       if (storedFavorites) {
         try {
-          const parsedData = JSON.parse(storedFavorites);
-          // Handle both string arrays and object arrays
-          if (Array.isArray(parsedData)) {
-            // Convert any object favorites to strings
-            const stringFavorites = parsedData.map(item => 
-              typeof item === 'string' ? item : (item.name || '')
-            ).filter(Boolean);
-            setInternalFavorites(stringFavorites);
-          } else {
-            console.error("Stored favorites is not an array, resetting to empty array");
-            setInternalFavorites([]);
-          }
+          setInternalFavorites(JSON.parse(storedFavorites));
         } catch (e) {
-          console.error("Failed to parse favorite cities from localStorage", e);
+          console.error("Failed to parse favorites:", e);
           setInternalFavorites([]);
         }
       }
@@ -76,6 +78,7 @@ export default function FavoriteCities({
       localStorage.setItem("favoriteCities", JSON.stringify(internalFavorites));
     }
   }, [internalFavorites, isControlled]);
+  
   // Mock city search - In a real app, this would call an API
   const searchCities = useCallback((query: string) => {
     if (query.trim() === "") {
@@ -102,39 +105,43 @@ export default function FavoriteCities({
       const results = mockCityDatabase
         .filter(city => 
           city.toLowerCase().includes(query.toLowerCase()) && 
-          !favorites.includes(city)
+          !favoriteCities.some(fav => fav.name === city)
         )
         .slice(0, 5); // Limit to 5 results
       
       setSearchResults(results);
       setIsSearching(false);
     }, 300);
-  }, [favorites]);  // Trigger search when newCity changes
+  }, [favoriteCities]);  
+  
+  // Trigger search when newCity changes
   useEffect(() => {
     searchCities(newCity);
   }, [newCity, searchCities]);
 
-  const updateFavorites = (updatedFavorites: string[]) => {
-    if (isControlled && onFavoritesChange) {
-      onFavoritesChange(updatedFavorites);
+  const updateFavorites = (cityName: string, action: 'add' | 'remove') => {
+    if (isControlled && onRemove && action === 'remove') {
+      onRemove(cityName);
+    } else if (isControlled && onAddFavorite && action === 'add') {
+      onAddFavorite(cityName);
     } else {
-      setInternalFavorites(updatedFavorites);
+      // Handle internal state
+      if (action === 'add') {
+        setInternalFavorites(prev => [...prev, cityName]);
+      } else {
+        setInternalFavorites(prev => prev.filter(city => city !== cityName));
+      }
     }
   };
 
   const addFavorite = (cityName: string) => {
-    if (cityName && !favorites.includes(cityName)) {
-      const updatedFavorites = [...favorites, cityName];
-      updateFavorites(updatedFavorites);
+    if (cityName && !favoriteCities.some(city => city.name.toLowerCase() === cityName.toLowerCase())) {
+      updateFavorites(cityName, 'add');
       
       toast({
         title: "City added",
         description: `${cityName} has been added to your favorites`,
       });
-      
-      if (onAddFavorite) {
-        onAddFavorite(cityName);
-      }
     }
     setNewCity("");
     setSearchResults([]);
@@ -142,8 +149,7 @@ export default function FavoriteCities({
   };
 
   const removeFavorite = (cityName: string) => {
-    const updatedFavorites = favorites.filter(city => city !== cityName);
-    updateFavorites(updatedFavorites);
+    updateFavorites(cityName, 'remove');
     
     toast({
       title: "City removed",
@@ -151,17 +157,9 @@ export default function FavoriteCities({
       variant: "destructive",
     });
   };
-  // Filter cities that are in the favorites list
-  const favoriteCitiesData = citiesData.filter(city => 
-    favorites.some(fav => 
-      typeof fav === 'string' 
-        ? fav.toLowerCase() === city.name.toLowerCase()
-        : (fav as any).name?.toLowerCase() === city.name.toLowerCase()
-    )
-  );
 
   // Check if we have any favorite cities data
-  const hasFavoritesData = favoriteCitiesData.length > 0;
+  const hasFavoritesData = favoriteCities.length > 0;
 
   return (
     <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
@@ -223,19 +221,19 @@ export default function FavoriteCities({
                   </div>
                 </div>
                 
-                {favorites.length > 0 && (
+                {favoriteCities.length > 0 && (
                   <div className="pt-2 border-t border-border">
                     <p className="text-sm text-muted-foreground mb-2">Current favorites:</p>
                     <div className="flex flex-wrap gap-1">
-                      {favorites.map(city => (
+                      {favoriteCities.map(city => (
                         <div 
-                          key={city}
+                          key={city.name}
                           className="bg-muted text-muted-foreground rounded-full text-xs px-2 py-1 flex items-center gap-1"
                         >
-                          {city}
+                          {city.name}
                           <X 
                             className="h-3 w-3 cursor-pointer hover:text-destructive"
-                            onClick={() => removeFavorite(city)}
+                            onClick={() => removeFavorite(city.name)}
                           />
                         </div>
                       ))}
@@ -276,29 +274,36 @@ export default function FavoriteCities({
           </div>
         ) : hasFavoritesData ? (
           <div className="space-y-6">
-            {favoriteCitiesData.map((city) => (
+            {favoriteCities.map((city) => (
               <div 
                 key={`${city.name}-${city.country}`}
-                className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0 group"
+                className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0 group cursor-pointer"
+                onClick={() => handleCityClick(city.name)}
               >
                 <div className="flex items-center">
                   <div className="rounded-full bg-accent p-1 flex items-center justify-center">
-                    <WeatherIcon 
-                      weatherCode={city.weather[0].id} 
-                      className="h-8 w-8"
-                    />
+                    {Array.isArray(city.weather) && city.weather[0] ? (
+                      <WeatherIcon 
+                        weatherCode={city.weather[0].id} 
+                        className="h-8 w-8"
+                      />
+                    ) : (
+                      <span className="h-8 w-8 inline-block" />
+                    )}
                   </div>
                   
                   <div className="ml-3">
                     <p className="font-medium">{city.name}</p>
-                    <p className="text-xs text-muted-foreground">{city.country}</p>
+                    {city.country && <p className="text-xs text-muted-foreground">{city.country}</p>}
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="text-xl font-medium">
-                    {Math.round(city.temp)}°{tempUnit}
-                  </div>
+                <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+                  {typeof city.temp === 'number' && (
+                    <div className="text-xl font-medium">
+                      {Math.round(city.temp)}°{tempUnit}
+                    </div>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -312,13 +317,8 @@ export default function FavoriteCities({
               </div>
             ))}
           </div>
-        ) : favorites.length > 0 ? (
-          <div className="text-center py-8">
-            <AlertTriangle className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">Weather data for your favorite cities is not available.</p>
-            <p className="text-xs text-muted-foreground/70">Try refreshing or check your internet connection.</p>
-          </div>
-        ) : (          <div className="text-center py-12 border-2 border-dashed border-muted rounded-lg">
+        ) : (
+          <div className="text-center py-12 border-2 border-dashed border-muted rounded-lg">
             <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
             <p className="text-muted-foreground">No favorite cities yet</p>
             <p className="text-xs text-muted-foreground/70 mb-4">Add cities to keep track of their weather</p>
@@ -348,16 +348,10 @@ export default function FavoriteCities({
             </div>
           </div>
         )}
-          {favorites.length > 0 && !hasFavoritesData && (
+        
+        {favoriteCities.length > 0 && !citiesData.length && (
           <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground">
-              Your favorite cities: {
-                favorites
-                  .map(city => typeof city === 'string' ? city : (city as any).name || 'Unknown')
-                  .filter(Boolean)
-                  .join(", ")
-              }
-            </p>
+            <p className="text-xs text-muted-foreground">Your favorite cities: {favoriteCities.map(city => city.name).join(", ")}</p>
           </div>
         )}
       </div>

@@ -132,18 +132,45 @@ export default function RadarMap({ units }: RadarMapProps) {
         setSelectedCity(e.detail);
         let favs: any[] = [];
         try {
-          favs = JSON.parse(localStorage.getItem("favoriteCities") || "[]");
-        } catch {}
-        const found = favs.find((c: any) => c.name.toLowerCase() === e.detail.toLowerCase());
+          const storedFavorites = JSON.parse(localStorage.getItem("favoriteCities") || "[]");
+          // Handle both string arrays and object arrays
+          if (Array.isArray(storedFavorites)) {
+            favs = storedFavorites.map(item => 
+              typeof item === 'string' 
+                ? { name: item } 
+                : item
+            );
+          }
+        } catch (err) {
+          console.error("Error parsing favorite cities", err);
+        }
+        
+        const found = favs.find((c: any) => 
+          typeof c === 'string' 
+            ? c.toLowerCase() === e.detail.toLowerCase()
+            : c.name?.toLowerCase() === e.detail.toLowerCase()
+        );
+        
         setWeather(found || null);
       }
     };
     window.addEventListener("favoriteCitySelected", handler);
+    
     // On mount, try to get initial weather
     let favs: any[] = [];
     try {
-      favs = JSON.parse(localStorage.getItem("favoriteCities") || "[]");
-    } catch {}
+      const storedFavorites = JSON.parse(localStorage.getItem("favoriteCities") || "[]");
+      // Handle both string arrays and object arrays
+      if (Array.isArray(storedFavorites)) {
+        favs = storedFavorites.map(item => 
+          typeof item === 'string' 
+            ? { name: item } 
+            : item
+        );
+      }
+    } catch (err) {
+      console.error("Error parsing favorite cities", err);
+    }
     const found = favs.find((c: any) => c.name.toLowerCase() === selectedCity.toLowerCase());
     setWeather(found || null);
     return () => window.removeEventListener("favoriteCitySelected", handler);
@@ -256,7 +283,7 @@ export default function RadarMap({ units }: RadarMapProps) {
     };
   }, [selectedCity, units]);
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-[70vh] md:h-[60vh]">
       <div className="flex-1 relative">
         <MapContainer center={coords} zoom={7} className="h-full">
           <TileLayer
@@ -273,10 +300,12 @@ export default function RadarMap({ units }: RadarMapProps) {
             city={selectedCity}
             weather={weather}
           />
-        </MapContainer>        {/* Hourly forecast overlay positioned at the bottom right */}
-        <div className="absolute bottom-4 right-4 w-[95%] sm:w-[70%] md:w-[50%] lg:w-[40%] z-[1000] bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+        </MapContainer>
+        
+        {/* Hourly forecast overlay positioned at the bottom */}
+        <div className="absolute bottom-4 right-4 left-4 md:left-auto w-auto md:w-[60%] lg:w-[50%] xl:w-[40%] z-[1000] rounded-lg overflow-hidden">
           {hourlyForecast.length > 0 ? (
-            <div className="transition-all duration-300 ease-in-out">
+            <div className="transition-all duration-300 ease-in-out h-full">
               <HourlyForecast 
                 hourlyData={hourlyForecast} 
                 units={units}
@@ -284,7 +313,7 @@ export default function RadarMap({ units }: RadarMapProps) {
               />
             </div>
           ) : (
-            <div className="p-4 text-center text-muted-foreground">
+            <div className="p-4 text-center text-muted-foreground bg-background/95 backdrop-blur-sm rounded-lg shadow-lg">
               <div className="animate-pulse">Loading hourly forecast...</div>
             </div>
           )}

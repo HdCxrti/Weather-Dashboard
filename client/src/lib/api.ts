@@ -1,6 +1,32 @@
 import { apiRequest } from "./queryClient";
 
 /**
+ * Helper function to normalize city data
+ * Ensures name is a string and weather data has expected format
+ */
+function normalizeCityData(city: any): any {
+  if (!city) return null;
+  
+  // If it's just a string city name, convert to a minimal city object
+  if (typeof city === 'string') {
+    return { name: city };
+  }
+  
+  // Ensure city has a string name
+  if (!city.name || typeof city.name !== 'string') {
+    console.warn('City without a name found in data', city);
+    return null;
+  }
+  
+  // Ensure other required properties exist
+  return {
+    ...city,
+    weather: Array.isArray(city.weather) ? city.weather : [{ id: 800, main: "Clear", description: "clear sky", icon: "01d" }],
+    country: city.country || "Unknown"
+  };
+}
+
+/**
  * Direct geocoding: get coordinates by city name
  */
 export async function geocodeCity(city: string) {
@@ -47,7 +73,7 @@ export async function getOtherCitiesWeather(units: 'metric' | 'imperial' = 'impe
  * Get weather for favorite cities
  */
 export async function getFavoriteCitiesWeather(
-  favoriteCities: string[],
+  favoriteCities: string[] | any[],
   units: 'metric' | 'imperial' = 'imperial'
 ) {
   // For a real API, you'd send the list of cities to fetch
@@ -56,9 +82,18 @@ export async function getFavoriteCitiesWeather(
     return [];
   }
   
+  // Normalize favorites to ensure we have only string city names
+  const normalizedFavorites = favoriteCities.map(city => 
+    typeof city === 'string' ? city : (city.name || '')
+  ).filter(Boolean);
+  
+  if (normalizedFavorites.length === 0) {
+    return [];
+  }
+  
   try {
     // Build the URL with the favorites as query parameters
-    const favoritesParam = encodeURIComponent(favoriteCities.join(','));
+    const favoritesParam = encodeURIComponent(normalizedFavorites.join(','));
     const response = await apiRequest(
       "GET", 
       `/api/favorite-cities?units=${units}&favorites=${favoritesParam}`, 
@@ -75,12 +110,14 @@ export async function getFavoriteCitiesWeather(
       throw new Error('API did not return an array of cities');
     }
     
-    // Filter to only include favorite cities (case-insensitive)
-    return allCities.filter((city: any) => 
-      favoriteCities.some(fav => 
+    // Filter to only include favorite cities (case-insensitive) and normalize the data
+    const filteredCities = allCities
+      .map(normalizeCityData)
+      .filter((city: any) => city && normalizedFavorites.some(fav => 
         fav.toLowerCase() === city.name.toLowerCase()
-      )
-    );
+      ));
+    
+    return filteredCities;
   } catch (error) {
     console.error("Error fetching favorite cities weather:", error);
     // Return an empty array to avoid crashing the UI
