@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import CurrentWeather from "@/components/CurrentWeather";
@@ -7,6 +7,8 @@ import OtherCities from "@/components/OtherCities";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Mock data for demonstration when API key isn't working
 const mockCurrentWeather: CurrentWeatherData = {
@@ -85,8 +87,16 @@ const mockOtherCities: OtherCityWeather[] = [
   { name: "Dubai", country: "AE", temp: 71, weather: [{ id: 802, main: "Clouds", description: "scattered clouds", icon: "03d" }] }
 ];
 
-export default function Home() {
-  const [city, setCity] = useState<string>("New York");
+// Add this helper function at the top of your file, above the component
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+export default function Home() {  const [city, setCity] = useState<string>("New York");
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
   const { toast } = useToast();
 
@@ -105,7 +115,6 @@ export default function Home() {
       setCity(searchCity);
     }
   };
-
   const toggleUnits = () => {
     setUnits(units === "imperial" ? "metric" : "imperial");
   };
@@ -128,20 +137,21 @@ export default function Home() {
   const hasError = weatherError || otherCitiesError;
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold mb-4 md:mb-0">Weather Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-semibold mb-4 md:mb-0">Weather Dashboard</h1>            <ThemeToggle />
+          </div>
           <SearchBar 
             onSearch={handleSearch} 
             onUnitToggle={toggleUnits} 
             units={units} 
             initialCity={city}
           />
-        </div>
-
+        </div>        {/* Error notification with theme-consistent styling */}
         {hasError && (
-          <div className="bg-[#382b2b] border border-red-800 rounded-lg p-4 mb-6 flex items-center text-red-300">
+          <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-lg p-4 mb-6 flex items-center">
             <AlertCircle className="h-5 w-5 mr-2" />
             <div>
               <p className="font-medium">API Error</p>
@@ -150,70 +160,69 @@ export default function Home() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">        <div className="lg:col-span-3">
             {hasRealWeatherData ? (
-              <div className="bg-[#1e1e1e] rounded-3xl overflow-hidden">
+              <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
                 <div className="p-6">
                   <h2 className="text-xl font-medium">
-                    Forecast in {city}, {(weatherData as any).current.sys.country}
+                    Forecast in {toTitleCase(city)}, {(weatherData as any).current.sys.country}
                   </h2>
-                  <p className="text-gray-400 mb-6">
+                  {/* Use theme-consistent text color */}
+                  <p className="text-muted-foreground mb-6">
                     {formatDate()}
                   </p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <CurrentWeather 
+                    {/* Pass theme prop to child components */}                    <CurrentWeather 
                       weatherData={(weatherData as any).current} 
                       city={city} 
-                      units={units} 
+                      units={units}
                     />
                   </div>
                   
-                  <WeeklyForecast 
-                    forecast={(weatherData as any).daily} 
-                    units={units} 
+                  {/* Pass theme prop to child components */}                  <WeeklyForecast 
+                    forecast={(weatherData as { daily: DailyForecast[] }).daily} 
+                    units={units}
                   />
                 </div>
-              </div>
-            ) : isWeatherLoading ? (
-              <div className="bg-[#1e1e1e] rounded-3xl p-6 flex items-center justify-center min-h-[400px]">
+              </div>            ) : isWeatherLoading ? (
+              <div className="bg-card text-card-foreground shadow-sm rounded-3xl p-6 flex items-center justify-center min-h-[400px]">
                 <div className="flex flex-col items-center">
-                  <Globe className="h-16 w-16 text-gray-500 animate-pulse" />
-                  <p className="mt-4 text-gray-400">
+                  {/* Use theme-consistent loading icon color */}
+                  <Globe className="h-16 w-16 text-muted-foreground animate-pulse" />
+                  {/* Use theme-consistent loading text */}
+                  <p className="mt-4 text-muted-foreground">
                     Loading weather data...
                   </p>
-                </div>
-              </div>
+                </div>              </div>
             ) : (
-              // Show mock data if there's an error or no data
-              <div className="bg-[#1e1e1e] rounded-3xl overflow-hidden">
+              // Mock data section with theme-consistent styling
+              <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
                 <div className="p-6">
                   <h2 className="text-xl font-medium">
-                    Forecast in {city}, {mockCurrentWeather.sys.country}
+                    Forecast in {toTitleCase(city)}, {mockCurrentWeather.sys.country}
                   </h2>
-                  <p className="text-gray-400 mb-6">
+                  {/* Use theme-consistent text color */}
+                  <p className="text-muted-foreground mb-6">
                     {formatDate()}
                   </p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <CurrentWeather 
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">                    <CurrentWeather 
                       weatherData={mockCurrentWeather} 
                       city={city} 
-                      units={units} 
+                      units={units}
                     />
                   </div>
-                  
-                  <WeeklyForecast 
+                    <WeeklyForecast 
                     forecast={mockDailyForecasts} 
-                    units={units} 
+                    units={units}
                   />
                 </div>
               </div>
             )}
           </div>
           
-          <OtherCities 
+          {/* Update OtherCities component */}          <OtherCities 
             citiesData={!otherCitiesError && otherCitiesData ? 
               (otherCitiesData as OtherCityWeather[]) : 
               mockOtherCities} 
@@ -221,8 +230,8 @@ export default function Home() {
             units={units}
           />
         </div>
-        
-        <div className="mt-8 text-center text-gray-500 text-sm">
+          {/* Footer with theme-consistent styling */}
+        <div className="mt-8 text-center text-muted-foreground text-sm">
           <p className="flex items-center justify-center gap-1">
             <span className="text-xs">⌨️</span> 
             Designed & Coded by Aniqa

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -44,7 +45,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    console.error(err); // Log instead of throwing
   });
 
   // importantly only setup vite in development and after
@@ -56,15 +57,27 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  // Use environment PORT variable or fallback to 3000
+  // Port 5000 is commonly used by Windows services
+  const port = parseInt(process.env.PORT || "8080", 10);
+  
+  // Try multiple ports if the preferred one is in use
+  function startServer(portToUse: number) {
+    server.listen(portToUse, 'localhost')
+      .on('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(`Port ${portToUse} is in use, trying ${portToUse + 1}`);
+          startServer(portToUse + 1);
+        } else {
+          console.error('Server error:', err);
+        }
+      })
+      .on('listening', () => {
+        const address = server.address();
+        const actualPort = typeof address === 'object' && address ? address.port : portToUse;
+        console.log(`Server running at http://localhost:${actualPort}`);
+      });
+  }
+
+  startServer(port);
 })();

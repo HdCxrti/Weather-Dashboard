@@ -18,25 +18,23 @@ export default function WeeklyForecast({ forecast, units }: WeeklyForecastProps)
 
   return (
     <div className="mt-6">
-      <div className="grid grid-cols-7 gap-2">
-        {forecast.slice(0, 7).map((day, index) => (
+      <h3 className="font-medium mb-4">7-Day Forecast</h3>
+      <div className="grid grid-cols-7 gap-2 overflow-x-auto">
+        {forecast.map((day, index) => (
           <div 
-            key={index} 
-            className="bg-[#202835] rounded-lg p-4 flex flex-col items-center"
+            key={day.dt} 
+            className={`flex flex-col items-center rounded-lg p-2 ${index === 0 ? "bg-accent" : "bg-muted"} text-center`}
           >
-            <span className="text-sm mb-2 text-gray-400">
-              {formatDay(day.dt)}
-            </span>
+            <span className="text-xs font-medium text-foreground uppercase">{index === 0 ? 'Today' : formatDay(day.dt)}</span>
             <WeatherIcon 
               weatherCode={day.weather[0].id} 
-              className="text-xl mb-2 h-8 w-8" 
+              className="h-12 w-12 my-2" 
             />
-            <span className="font-medium text-base mt-1">
-              {Math.round(day.temp.max)}°{tempUnit}
-            </span>
-            <span className="text-xs text-gray-400">
-              {Math.round(day.temp.min)}°{tempUnit}
-            </span>
+            <span className="text-xs mb-1 capitalize text-muted-foreground">{day.weather[0].description}</span>
+            <div className="text-sm">
+              <span className="font-medium">{Math.round(day.temp.day)}°</span>
+              <span className="text-muted-foreground ml-1">{Math.round(day.temp.night)}°</span>
+            </div>
           </div>
         ))}
       </div>

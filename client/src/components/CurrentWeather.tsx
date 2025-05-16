@@ -22,19 +22,31 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
     weatherData.weather[0].main === "Rain" || 
     weatherData.weather[0].main === "Drizzle" || 
     weatherData.weather[0].main === "Thunderstorm";
+    
+  // Calculate the opposite temperature unit value
+  const oppositeTemp = tempUnit === "F" 
+    ? Math.round((weatherData.main.temp - 32) * 5/9) // Convert F to C
+    : Math.round((weatherData.main.temp * 9/5) + 32); // Convert C to F
+
+  // Define theme-consistent colors
+  const textColor = "text-foreground";
+  const secondaryTextColor = "text-muted-foreground";
+  const primaryBg = "bg-card";
+  const secondaryBg = "bg-muted";
+  const tertiaryBg = "bg-accent";
 
   return (
     <>
       {/* Current temperature */}
-      <div className="bg-[#1f2937] rounded-xl p-6">
+      <div className={`${primaryBg} rounded-xl p-6 shadow-sm ${textColor}`}>
         <div className="flex flex-col justify-between h-full">
           <div>
             <div className="flex items-end">
               <span className="text-6xl font-bold">
                 {Math.round(weatherData.main.temp)}°{tempUnit}
               </span>
-              <span className="text-lg text-gray-400 ml-2">
-                /°{tempUnit === "F" ? "C" : "F"}
+              <span className={`text-lg ${secondaryTextColor} ml-2`}>
+                /{oppositeTemp}°{tempUnit === "F" ? "C" : "F"}
               </span>
             </div>
             <div className="flex flex-col mt-3">
@@ -61,7 +73,7 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
               />
               <div>
                 <p className="font-medium capitalize">{weatherData.weather[0].description}</p>
-                <p className="text-sm text-gray-400">
+                <p className={`text-sm ${secondaryTextColor}`}>
                   Feels like {Math.round(weatherData.main.feels_like)}°{tempUnit}
                 </p>
               </div>
@@ -81,13 +93,13 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
       </div>
       
       {/* Weather details */}
-      <div className="bg-[#375a64] bg-opacity-50 rounded-xl p-6">
+      <div className={`${secondaryBg} rounded-xl p-6 shadow-sm ${textColor}`}>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span>Visibility</span>
             <div className="flex items-center">
               <span className="font-medium">{formattedVisibility}</span>
-              <Eye className="ml-2 h-4 w-4 text-gray-300" />
+              <Eye className="ml-2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
           
@@ -97,7 +109,7 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
               <span className="font-medium">
                 {Math.round(weatherData.main.feels_like - 2)}°{tempUnit}
               </span>
-              <Droplet className="ml-2 h-4 w-4 text-gray-300" />
+              <Droplet className="ml-2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
           
@@ -107,7 +119,7 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
               <span className="font-medium">
                 {Math.round(weatherData.wind.speed)}{speedUnit}
               </span>
-              <Wind className="ml-2 h-4 w-4 text-gray-300" />
+              <Wind className="ml-2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
           
@@ -115,7 +127,7 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
             <span>Humidity</span>
             <div className="flex items-center">
               <span className="font-medium">{weatherData.main.humidity}%</span>
-              <Gauge className="ml-2 h-4 w-4 text-gray-300" />
+              <Gauge className="ml-2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
           
@@ -123,14 +135,14 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
             <span>Cloudiness</span>
             <div className="flex items-center">
               <span className="font-medium">{weatherData.clouds.all}%</span>
-              <Cloud className="ml-2 h-4 w-4 text-gray-300" />
+              <Cloud className="ml-2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
         </div>
       </div>
       
       {/* Sunrise/Sunset */}
-      <div className="bg-[#2d3b55] rounded-xl p-6">
+      <div className={`${tertiaryBg} rounded-xl p-6 shadow-sm ${textColor}`}>
         <div className="flex flex-col h-full justify-between">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Sunrise</h3>
@@ -143,9 +155,9 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
             </span>
           </div>
           
-          <div className="h-px bg-gray-600 my-4 relative">
+          <div className="h-px bg-border my-4 relative">
             <div className="absolute top-0 left-1/4 transform -translate-y-1/2 w-3 h-3 bg-yellow-300 rounded-full"></div>
-            <div className="absolute top-0 right-1/4 transform -translate-y-1/2 w-3 h-3 bg-gray-300 rounded-full"></div>
+            <div className="absolute top-0 right-1/4 transform -translate-y-1/2 w-3 h-3 bg-muted-foreground rounded-full"></div>
           </div>
           
           <div className="flex justify-between items-center mt-4">

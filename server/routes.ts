@@ -8,6 +8,15 @@ console.log("WeatherAPI Key exists:", !!process.env.WEATHERAPI_KEY);
 const WEATHERAPI_KEY = process.env.WEATHERAPI_KEY;
 const WEATHERAPI_BASE_URL = "https://api.weatherapi.com/v1";
 
+// Helper function to properly capitalize city names
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 // Cities for the "Forecast in Other Cities" section - customize with your favorites
 const FAVORITE_CITIES = [
   { name: "San Francisco", country: "US" },
@@ -51,6 +60,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "City or weather data not found" });
       }
       
+      // Apply proper capitalization to the city name from the API response
+      const capitalizedCityName = toTitleCase(response.data.location.name);
+      
       // Map the WeatherAPI data to our app's expected format
       const currentWeather = {
         coord: {
@@ -89,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         timezone: response.data.location.localtime_epoch - new Date().getTime() / 1000,
         id: 1,
-        name: response.data.location.name,
+        name: capitalizedCityName,
         cod: 200
       };
       
@@ -138,7 +150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lon: response.data.location.lon,
         timezone: response.data.location.tz_id,
         timezone_offset: response.data.location.localtime_epoch - new Date().getTime() / 1000,
-        current: currentWeather,
+        current: {
+          ...currentWeather,
+          name: capitalizedCityName  // Ensure this is set correctly
+        },
         daily: dailyForecasts
       };
       
