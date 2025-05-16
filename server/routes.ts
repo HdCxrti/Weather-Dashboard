@@ -26,6 +26,23 @@ const FAVORITE_CITIES = [
   { name: "Toronto", country: "CA" }
 ];
 
+// Additional cities to have more options for favorites
+const ADDITIONAL_CITIES = [
+  { name: "Paris", country: "FR" },
+  { name: "Berlin", country: "DE" },
+  { name: "Madrid", country: "ES" },
+  { name: "Rome", country: "IT" },
+  { name: "Amsterdam", country: "NL" },
+  { name: "Vienna", country: "AT" },
+  { name: "Dubai", country: "AE" },
+  { name: "Singapore", country: "SG" },
+  { name: "Hong Kong", country: "HK" },
+  { name: "Bangkok", country: "TH" }
+];
+
+// All available cities for the favorite cities feature
+const ALL_CITIES = [...FAVORITE_CITIES, ...ADDITIONAL_CITIES];
+
 // Helper function to convert WeatherAPI data to our app's format
 const mapWeatherCondition = (condition: any) => ({
   id: condition.code,
@@ -213,6 +230,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (axios.isAxiosError(error)) {
         res.status(error.response?.status || 500).json({ 
           message: error.response?.data?.message || "Error fetching other cities data" 
+        });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  // Get weather for favorite cities
+  app.get("/api/favorite-cities", async (req: Request, res: Response) => {
+    try {
+      const units = req.query.units as string || "imperial";
+      const cityWeatherPromises = ALL_CITIES.map(async (city) => {
+        try {
+          const response = await axios.get(`${WEATHERAPI_BASE_URL}/current.json`, {
+            params: {
+              key: WEATHERAPI_KEY,
+              q: `${city.name},${city.country}`
+            }
+          });
+          
+          return {
+            name: city.name,
+            country: city.country,
+            temp: units === "imperial" ? response.data.current.temp_f : response.data.current.temp_c,
+            weather: [mapWeatherCondition(response.data.current.condition)]
+          };
+        } catch (cityError) {
+          console.error(`Error fetching data for ${city.name}:`, cityError);
+          // Return a placeholder for this city so we don't break the whole response
+          return {
+            name: city.name,
+            country: city.country,
+            temp: 0,
+            weather: [{ 
+              id: 800, 
+              main: "Clear", 
+              description: "unknown", 
+              icon: "" 
+            }]
+          };
+        }
+      });
+      
+      const citiesData = await Promise.all(cityWeatherPromises);
+      res.json(citiesData);
+    } catch (error) {
+      console.error("Favorite cities API error:", error);
+      if (axios.isAxiosError(error)) {
+        res.status(error.response?.status || 500).json({ 
+          message: error.response?.data?.message || "Error fetching favorite cities data" 
+        });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }    }
+  });
+    // Get weather for favorite cities
+  app.get("/api/favorite-cities", async (req: Request, res: Response) => {
+    try {
+      const units = req.query.units as string || "imperial";
+      const favorites = req.query.favorites ? (req.query.favorites as string).split(',') : [];
+      
+      // If no favorites provided, return empty array
+      if (!favorites.length) {
+        return res.json([]);
+      }
+      
+      // Filter to only include cities that are in our predefined list
+      const citiesToFetch = ALL_CITIES.filter(city => 
+        favorites.some(fav => city.name.toLowerCase() === fav.toLowerCase())
+      );
+      
+      // If none of the favorites match our known cities, return empty array
+      if (!citiesToFetch.length) {
+        return res.json([]);
+      }
+      
+      const cityWeatherPromises = citiesToFetch.map(async (city) => {
+        try {
+          // If we have an API key, fetch real data
+          if (WEATHERAPI_KEY) {
+            const response = await axios.get(`${WEATHERAPI_BASE_URL}/current.json`, {
+              params: {
+                key: WEATHERAPI_KEY,
+                q: `${city.name},${city.country}`,
+                timeout: 5000 // Add timeout to prevent long-hanging requests
+              }
+            });
+            
+            return {
+              name: city.name,
+              country: city.country,
+              temp: units === "imperial" ? response.data.current.temp_f : response.data.current.temp_c,
+              weather: [mapWeatherCondition(response.data.current.condition)]
+            };
+          } else {
+            // If no API key, return mock data
+            const mockTemp = Math.floor(Math.random() * 40) + 40; // Random temp between 40-80°F
+            return {
+              name: city.name,
+              country: city.country,
+              temp: mockTemp,
+              weather: [{ 
+                id: 800, 
+                main: "Clear", 
+                description: "clear sky", 
+                icon: "01d" 
+              }]
+            };
+          }
+        } catch (cityError) {
+          console.error(`Error fetching data for ${city.name}:`, cityError);
+          // Return a placeholder for this city with mock data
+          return {
+            name: city.name,
+            country: city.country,
+            temp: Math.floor(Math.random() * 40) + 40, // Random temp between 40-80°F
+            weather: [{ 
+              id: 800, 
+              main: "Clear", 
+              description: "clear sky (mock)", 
+              icon: "01d" 
+            }]
+          };
+        }
+      });
+      
+      const citiesData = await Promise.all(cityWeatherPromises);
+      res.json(citiesData);
+    } catch (error) {
+      console.error("Favorite cities API error:", error);
+      if (axios.isAxiosError(error)) {
+        res.status(error.response?.status || 500).json({ 
+          message: error.response?.data?.message || "Error fetching favorite cities data" 
         });
       } else {
         res.status(500).json({ message: "Internal server error" });
