@@ -228,15 +228,7 @@ export default function Home() {  const [city, setCity] = useState<string>("New 
               mockOtherCities} 
             isLoading={isOtherCitiesLoading && !otherCitiesError}
             units={units}
-          />
-        </div>
-          {/* Footer with theme-consistent styling */}
-        <div className="mt-8 text-center text-muted-foreground text-sm">
-          <p className="flex items-center justify-center gap-1">
-            <span className="text-xs">⌨️</span> 
-            Designed & Coded by Aniqa
-          </p>
-        </div>
+          />        </div>
       </div>
     </div>
   );
