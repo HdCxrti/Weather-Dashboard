@@ -14,7 +14,7 @@ export default function OtherCities({ citiesData, isLoading, units }: OtherCitie
   return (
     <div className="bg-[#1e1e1e] rounded-3xl h-full">
       <div className="p-6">
-        <h2 className="text-xl font-medium mb-6">Forecast in Other Cities</h2>
+        <h2 className="text-xl font-medium mb-6">Forecast in My Favorite Cities</h2>
         
         {isLoading ? (
           <div className="space-y-5">

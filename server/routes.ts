@@ -8,13 +8,13 @@ console.log("WeatherAPI Key exists:", !!process.env.WEATHERAPI_KEY);
 const WEATHERAPI_KEY = process.env.WEATHERAPI_KEY;
 const WEATHERAPI_BASE_URL = "https://api.weatherapi.com/v1";
 
-// Cities for the "Forecast in Other Cities" section
-const POPULAR_CITIES = [
-  { name: "Seattle", country: "US" },
-  { name: "Munich", country: "DE" },
-  { name: "Paris", country: "FR" },
-  { name: "Istanbul", country: "TR" },
-  { name: "Dubai", country: "AE" }
+// Cities for the "Forecast in Other Cities" section - customize with your favorites
+const FAVORITE_CITIES = [
+  { name: "San Francisco", country: "US" },
+  { name: "Tokyo", country: "JP" },
+  { name: "London", country: "GB" },
+  { name: "Sydney", country: "AU" },
+  { name: "Toronto", country: "CA" }
 ];
 
 // Helper function to convert WeatherAPI data to our app's format
@@ -159,7 +159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/other-cities", async (req: Request, res: Response) => {
     try {
       const units = req.query.units as string || "imperial";
-      const cityWeatherPromises = POPULAR_CITIES.map(async (city) => {
+      const cityWeatherPromises = FAVORITE_CITIES.map(async (city) => {
         try {
           const response = await axios.get(`${WEATHERAPI_BASE_URL}/current.json`, {
             params: {
