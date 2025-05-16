@@ -69,8 +69,7 @@ export default function HourlyForecast({ hourlyData, units, selectedCity }: Hour
         <h3 className="text-lg font-medium">Hourly Forecast</h3>
         <div className="text-sm text-muted-foreground">{selectedCity}</div>
       </div>
-      
-      <div className="overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+        <div className="overflow-x-auto pb-2">
         <div className="flex gap-3 min-w-max">
           {displayHours.map((hour, index) => {
             // Calculate opacity based on precipitation chance

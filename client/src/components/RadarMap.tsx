@@ -274,7 +274,7 @@ export default function RadarMap({ units }: RadarMapProps) {
             weather={weather}
           />
         </MapContainer>        {/* Hourly forecast overlay positioned at the bottom right */}
-        <div className="absolute bottom-4 right-4 w-[95%] md:w-[40%] z-[1000] bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute bottom-4 right-4 w-[95%] sm:w-[70%] md:w-[50%] lg:w-[40%] z-[1000] bg-background/95 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden">
           {hourlyForecast.length > 0 ? (
             <div className="transition-all duration-300 ease-in-out">
               <HourlyForecast 
