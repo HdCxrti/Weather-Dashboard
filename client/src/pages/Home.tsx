@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import CurrentWeather from "@/components/CurrentWeather";
 import WeeklyForecast from "@/components/WeeklyForecast";
-import FavoriteCities from "@/components/FavoriteCities";
+import FavoriteCitiesSimple from "@/components/FavoriteCitiesSimple";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, AlertCircle } from "lucide-react";
@@ -286,9 +286,7 @@ export default function Home() {
               <RadarMap units={units} />
             </div>
           </div>
-          
-          {/* Favorite Cities component */}
-          <FavoriteCities 
+            {/* Favorite Cities component */}          <FavoriteCitiesSimple 
             citiesData={!otherCitiesError && otherCitiesData ? 
               (otherCitiesData as OtherCityWeather[]) : 
               displayedMockCities} 

@@ -1,0 +1,269 @@
+import { Skeleton } from "@/components/ui/skeleton";
+import WeatherIcon from "@/components/WeatherIcon";
+import { OtherCityWeather } from "@/types/weather";
+import { useState, useEffect, useCallback } from "react";
+import { Heart, Plus, X, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+
+interface FavoriteCitiesProps {
+  citiesData: OtherCityWeather[];
+  isLoading: boolean;
+  units: "metric" | "imperial";
+  onAddFavorite?: (cityName: string) => void;
+  favorites: string[];
+  onFavoritesChange: (favorites: string[]) => void;
+}
+
+export default function FavoriteCities({ 
+  citiesData, 
+  isLoading, 
+  units, 
+  onAddFavorite,
+  favorites,
+  onFavoritesChange 
+}: FavoriteCitiesProps) {
+  const tempUnit = units === "imperial" ? "F" : "C";
+  const { toast } = useToast();
+  const [newCity, setNewCity] = useState<string>("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Mock city search - In a real app, this would call an API
+  const searchCities = useCallback((query: string) => {
+    if (query.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    
+    // Simulate API search with a timeout
+    setTimeout(() => {
+      // This is mock data - in real app you would make an API call to search for cities
+      const mockCityDatabase = [
+        "New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia",
+        "San Antonio", "San Diego", "Dallas", "San Jose", "Austin", "Jacksonville",
+        "Fort Worth", "Columbus", "San Francisco", "Charlotte", "Indianapolis",
+        "Seattle", "Denver", "Washington", "Boston", "El Paso", "Nashville",
+        "Detroit", "Portland", "Las Vegas", "Memphis", "Louisville", "Milwaukee",
+        "Baltimore", "Albuquerque", "Tucson", "Fresno", "Sacramento", "Kansas City",
+        "Miami", "Atlanta", "Cleveland", "Raleigh", "Omaha", "Arlington",
+        // Add the cities shown in the screenshot
+        "Hedgesville", "Martinsburg", "Beckley"
+      ];
+      
+      // Filter cities that match the query
+      const results = mockCityDatabase
+        .filter(city => city.toLowerCase().includes(query.toLowerCase()))
+        .filter(city => !favorites.includes(city)) // Filter out already favorited cities
+        .slice(0, 5); // Limit results to 5
+      
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 500);
+  }, [favorites]);
+
+  // Handle search input change
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setNewCity(query);
+    searchCities(query);
+  }, [searchCities]);
+  
+  // Add city to favorites
+  const addCityToFavorites = useCallback((cityName: string) => {
+    if (!cityName) return;
+    
+    if (favorites.includes(cityName)) {
+      toast({
+        title: "Already in favorites",
+        description: `${cityName} is already in your favorites`,
+        variant: "default"
+      });
+      return;
+    }
+    
+    // Update favorites
+    const updatedFavorites = [...favorites, cityName];
+    onFavoritesChange(updatedFavorites);
+    
+    // Clear input and close dialog
+    setNewCity("");
+    setDialogOpen(false);
+    
+    toast({
+      title: "City added",
+      description: `${cityName} has been added to your favorites`,
+      variant: "default"
+    });
+    
+    // Switch to the new city
+    if (onAddFavorite) {
+      onAddFavorite(cityName);
+    }
+  }, [favorites, onFavoritesChange, toast, onAddFavorite]);
+  
+  // Remove city from favorites
+  const removeCityFromFavorites = useCallback((cityName: string) => {
+    const updatedFavorites = favorites.filter(city => city !== cityName);
+    onFavoritesChange(updatedFavorites);
+    
+    toast({
+      title: "City removed",
+      description: `${cityName} has been removed from your favorites`,
+      variant: "default"
+    });
+  }, [favorites, onFavoritesChange, toast]);
+
+  return (
+    <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium">Favorite Cities</h2>
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Add City
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Add a city to favorites</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <Input
+                  value={newCity}
+                  onChange={handleSearchChange}
+                  placeholder="Search for a city..."
+                  className="col-span-3"
+                />
+                {isSearching ? (
+                  <div className="flex items-center justify-center py-2">
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <ul className="space-y-2">
+                    {searchResults.map(result => (
+                      <li key={result}>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => addCityToFavorites(result)}
+                        >
+                          {result}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : newCity.trim() !== "" ? (
+                  <p className="text-sm text-muted-foreground">No cities found. Try a different search.</p>
+                ) : null}
+              </div>
+              <DialogFooter>
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                {newCity.trim() !== "" && (
+                  <Button 
+                    onClick={() => addCityToFavorites(newCity)}
+                    variant="default"
+                  >
+                    Add
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        {isLoading ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div>
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+                <Skeleton className="h-4 w-8" />
+              </div>
+            ))}
+          </div>
+        ) : citiesData.length === 0 || favorites.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertTriangle className="h-10 w-10 text-muted-foreground mb-2" />
+            <h3 className="text-lg font-semibold">Weather data for your favorite cities is not available.</h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              Try refreshing or check your internet connection.
+            </p>
+            <div className="mt-4 text-sm text-muted-foreground">
+              Your favorite cities: {favorites.length > 0 ? favorites.join(', ') : 'None added yet'}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {citiesData
+              .filter(city => favorites.includes(city.name))
+              .map((city) => (
+                <div 
+                  key={`${city.name}-${city.country}`}
+                  className="flex items-center justify-between transition-all hover:bg-accent/30 p-2 rounded-lg cursor-pointer"
+                  onClick={() => onAddFavorite?.(city.name)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 flex items-center justify-center">                      <WeatherIcon 
+                        weatherCode={city.weather[0].id} 
+                        className="h-8 w-8"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{city.name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {city.weather[0].description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium mr-2">
+                      {Math.round(city.temp)}°{tempUnit}
+                    </span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCityFromFavorites(city.name);
+                      }} 
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

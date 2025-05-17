@@ -37,7 +37,11 @@ const ADDITIONAL_CITIES = [
   { name: "Dubai", country: "AE" },
   { name: "Singapore", country: "SG" },
   { name: "Hong Kong", country: "HK" },
-  { name: "Bangkok", country: "TH" }
+  { name: "Bangkok", country: "TH" },
+  // Add user's favorite cities from screenshot
+  { name: "Hedgesville", country: "US" },
+  { name: "Martinsburg", country: "US" },
+  { name: "Beckley", country: "US" }
 ];
 
 // All available cities for the favorite cities feature
@@ -224,7 +228,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const citiesData = await Promise.all(cityWeatherPromises);
-      res.json(citiesData);    } catch (error) {
+      res.json(citiesData);
+    } catch (error) {
       console.error("Other cities API error:", error);
       if (axios.isAxiosError(error)) {
         res.status(error.response?.status || 500).json({ 
