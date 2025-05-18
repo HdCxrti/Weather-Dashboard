@@ -98,6 +98,13 @@ function toTitleCase(str: string): string {
     .join(' ');
 }
 
+// Extract just the city name from a search query (e.g. "New York USA" -> "New York")
+function extractCityName(cityQuery: string): string {
+  // Extract the first part of the city name (before comma or before country name indicators)
+  const parts = cityQuery.split(/,|\s+(?:USA|US|United States|Canada|UK|Russia|China|Japan|Germany|France|Italy|Brazil|Australia)$/i);
+  return parts[0].trim();
+}
+
 export default function Home() {  
   const [city, setCity] = useState<string>("New York");
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
