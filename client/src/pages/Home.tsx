@@ -4,6 +4,9 @@ import SearchBar from "@/components/SearchBar";
 import CurrentWeather from "@/components/CurrentWeather";
 import WeeklyForecast from "@/components/WeeklyForecast";
 import FavoriteCitiesSimple from "@/components/FavoriteCitiesSimple";
+import WeatherStats from "@/components/WeatherStats";
+import WeatherNewsSummary from "@/components/WeatherNewsSummary";
+import WeatherAlerts from "@/components/WeatherAlerts";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, AlertCircle } from "lucide-react";
@@ -276,9 +279,7 @@ export default function Home() {
               <p className="text-sm">Using demo data - API key may be invalid or still activating.</p>
             </div>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        )}        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             {hasRealWeatherData ? (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
@@ -342,24 +343,48 @@ export default function Home() {
               <RadarMap units={units} />
             </div>
           </div>
-            {/* Favorite Cities component */}          <FavoriteCitiesSimple 
-            citiesData={!otherCitiesError && otherCitiesData ? 
-              (otherCitiesData as OtherCityWeather[]) : 
-              displayedMockCities} 
-            isLoading={isOtherCitiesLoading && !otherCitiesError}
-            units={units}
-            favorites={favoriteCities}            onFavoritesChange={(updatedFavorites) => {
-              setFavoriteCities(updatedFavorites);
-            }}            onAddFavorite={(cityName) => {
-              // Extract just the city name part (without country/state)
-              const pureCityName = extractCityName(cityName);
-              setCity(pureCityName); // Switch to the new favorite city
-              
-              // Dispatch event for RadarMap to update when selecting from favorites
-              const event = new CustomEvent("favoriteCitySelected", { detail: pureCityName });
-              window.dispatchEvent(event);
-            }}
-          />
+          
+          <div className="lg:col-span-1 space-y-6">
+            {/* Favorite Cities component */}
+            <FavoriteCitiesSimple 
+              citiesData={!otherCitiesError && otherCitiesData ? 
+                (otherCitiesData as OtherCityWeather[]) : 
+                displayedMockCities} 
+              isLoading={isOtherCitiesLoading && !otherCitiesError}
+              units={units}
+              favorites={favoriteCities}
+              onFavoritesChange={(updatedFavorites) => {
+                setFavoriteCities(updatedFavorites);
+              }}
+              onAddFavorite={(cityName) => {
+                // Extract just the city name part (without country/state)
+                const pureCityName = extractCityName(cityName);
+                setCity(pureCityName); // Switch to the new favorite city
+                
+                // Dispatch event for RadarMap to update when selecting from favorites
+                const event = new CustomEvent("favoriteCitySelected", { detail: pureCityName });
+                window.dispatchEvent(event);
+              }}
+            />
+            
+            {/* Additional Weather Insights */}
+            <WeatherStats 
+              cityName={toTitleCase(extractCityName(city))}
+              units={units}
+            />            
+            {/* Weather News Summary */}
+            <WeatherNewsSummary
+              cityName={toTitleCase(extractCityName(city))}
+              countryCode={hasRealWeatherData ? 
+                (weatherData as any).current.sys.country : 
+                mockCurrentWeather.sys.country}
+            />
+            
+            {/* Weather Alerts */}
+            <WeatherAlerts
+              cityName={toTitleCase(extractCityName(city))}
+            />
+          </div>
         </div>
       </div>
     </div>
