@@ -7,6 +7,8 @@ import FavoriteCitiesSimple from "@/components/FavoriteCitiesSimple";
 import WeatherStats from "@/components/WeatherStats";
 import WeatherNewsSummary from "@/components/WeatherNewsSummary";
 import WeatherAlerts from "@/components/WeatherAlerts";
+import DetailedHourlyForecast from "@/components/DetailedHourlyForecast";
+import Footer from "@/components/Footer";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, AlertCircle } from "lucide-react";
@@ -336,12 +338,15 @@ export default function Home() {
                 </div>
               </div>
             )}
-            
-            {/* Radar Map Section */}
+              {/* Radar Map Section */}
             <div className="mt-6">
               <h3 className="font-medium mb-2">Live Radar</h3>
               <RadarMap units={units} />
-            </div>
+            </div>            {/* Detailed Hourly Forecast Section - Full Width */}
+            <DetailedHourlyForecast
+              hourlyData={hasRealWeatherData ? (weatherData as any).hourly : undefined}
+              units={units}
+            />
           </div>
           
           <div className="lg:col-span-1 space-y-6">
@@ -383,9 +388,13 @@ export default function Home() {
             {/* Weather Alerts */}
             <WeatherAlerts
               cityName={toTitleCase(extractCityName(city))}
-            />
-          </div>
+            />          </div>
         </div>
+        
+        {/* Footer */}
+        <Footer 
+          lastUpdated={new Date()}
+        />
       </div>
     </div>
   );
