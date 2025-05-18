@@ -317,46 +317,7 @@ export default function RadarMap({ units }: RadarMapProps) {
               <div className="animate-pulse">Loading hourly forecast...</div>
             </div>
           )}
-        </div>
-      </div>
-      
-      <div className="p-4 bg-card shadow-md">
-        <div className="text-lg font-semibold mb-2">Weather Radar</div>
-        <div className="flex flex-wrap gap-2">
-          {Object.keys(CITY_COORDS).map((city) => {
-            const isSelected = city === selectedCity;
-            return (
-              <div
-                key={city}
-                onClick={() => setSelectedCity(city)}
-                className={`cursor-pointer px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 ${
-                  isSelected
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                {capitalizeCity(city)}
-                {isSelected && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+        </div>      </div>
     </div>
   );
 }

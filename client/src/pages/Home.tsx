@@ -157,10 +157,13 @@ export default function Home() {
       });
     }
   }, [otherCitiesError, toast]);
-
   const handleSearch = (searchCity: string) => {
     if (searchCity.trim()) {
       setCity(searchCity);
+      
+      // Dispatch event for RadarMap to update - this is needed for the radar map to switch cities
+      const event = new CustomEvent("favoriteCitySelected", { detail: searchCity });
+      window.dispatchEvent(event);
     }
   };
   
@@ -292,12 +295,15 @@ export default function Home() {
               displayedMockCities} 
             isLoading={isOtherCitiesLoading && !otherCitiesError}
             units={units}
-            favorites={favoriteCities}
-            onFavoritesChange={(updatedFavorites) => {
+            favorites={favoriteCities}            onFavoritesChange={(updatedFavorites) => {
               setFavoriteCities(updatedFavorites);
             }}
             onAddFavorite={(cityName) => {
               setCity(cityName); // Switch to the new favorite city
+              
+              // Dispatch event for RadarMap to update when selecting from favorites
+              const event = new CustomEvent("favoriteCitySelected", { detail: cityName });
+              window.dispatchEvent(event);
             }}
           />
         </div>
