@@ -74,7 +74,12 @@ async function geocodeCity(city: string): Promise<
 }
 
 function capitalizeCity(city: string): string {
-  return city
+  // Extract just the city name first (without country/state)
+  const cityParts = city.split(/,|\s+(?:USA|US|United States|Canada|UK|Russia|China|Japan|Germany|France|Italy|Brazil|Australia)$/i);
+  const cityName = cityParts[0].trim();
+  
+  // Then capitalize it
+  return cityName
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');

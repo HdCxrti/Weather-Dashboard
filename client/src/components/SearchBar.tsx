@@ -12,8 +12,9 @@ interface SearchBarProps {
 
 export default function SearchBar({ onSearch, onUnitToggle, units, initialCity }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialCity);
-
   const handleSearch = () => {
+    // Pass the search query to the parent component
+    // The actual cleaning of city name will happen in Home.tsx
     onSearch(searchQuery);
   };
 

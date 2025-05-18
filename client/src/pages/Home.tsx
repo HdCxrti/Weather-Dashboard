@@ -260,9 +260,8 @@ export default function Home() {
           <div className="lg:col-span-3">
             {hasRealWeatherData ? (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
-                <div className="p-6">
-                  <h2 className="text-xl font-medium">
-                    Forecast in {toTitleCase(city)}, {(weatherData as any).current.sys.country}
+                <div className="p-6">                  <h2 className="text-xl font-medium">
+                    Forecast in {toTitleCase(extractCityName(city))}, {(weatherData as any).current.sys.country}
                   </h2>
                   <p className="text-muted-foreground mb-6">
                     {formatDate()}
@@ -293,9 +292,8 @@ export default function Home() {
               </div>
             ) : (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
-                <div className="p-6">
-                  <h2 className="text-xl font-medium">
-                    Forecast in {toTitleCase(city)}, {mockCurrentWeather.sys.country}
+                <div className="p-6">                  <h2 className="text-xl font-medium">
+                    Forecast in {toTitleCase(extractCityName(city))}, {mockCurrentWeather.sys.country}
                   </h2>
                   <p className="text-muted-foreground mb-6">
                     {formatDate()}
@@ -330,12 +328,13 @@ export default function Home() {
             units={units}
             favorites={favoriteCities}            onFavoritesChange={(updatedFavorites) => {
               setFavoriteCities(updatedFavorites);
-            }}
-            onAddFavorite={(cityName) => {
-              setCity(cityName); // Switch to the new favorite city
+            }}            onAddFavorite={(cityName) => {
+              // Extract just the city name part (without country/state)
+              const pureCityName = extractCityName(cityName);
+              setCity(pureCityName); // Switch to the new favorite city
               
               // Dispatch event for RadarMap to update when selecting from favorites
-              const event = new CustomEvent("favoriteCitySelected", { detail: cityName });
+              const event = new CustomEvent("favoriteCitySelected", { detail: pureCityName });
               window.dispatchEvent(event);
             }}
           />
