@@ -34,7 +34,7 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
   const primaryBg = "bg-card";
   const secondaryBg = "bg-muted";
   const tertiaryBg = "bg-accent";
-  
+
   // Format sunrise time with proper error handling
   const formatSunriseTime = () => {
     try {
@@ -187,7 +187,8 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
       
       {/* Sunrise/Sunset */}
       <div className={`${tertiaryBg} rounded-xl p-6 shadow-sm ${textColor}`}>
-        <div className="flex flex-col h-full justify-between">          <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col h-full justify-between">
+          <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Sunrise</h3>
             <span className="text-xl">
               {formatSunriseTime()}

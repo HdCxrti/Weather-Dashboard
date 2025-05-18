@@ -28,13 +28,21 @@ const mockCurrentWeather: CurrentWeatherData = {
   visibility: 10000,
   wind: { speed: 16, deg: 350 },
   clouds: { all: 0 },
-  dt: 1618317040,
-  sys: {
+  dt: 1618317040,  sys: {
     type: 1,
     id: 5141,
     country: "US",
-    sunrise: 1618282134,
-    sunset: 1618333901
+    // Create timestamps for today at 6:15 AM and 7:45 PM respectively
+    sunrise: (() => {
+      const today = new Date();
+      today.setHours(6, 15, 0, 0); // 6:15 AM
+      return Math.floor(today.getTime() / 1000);
+    })(),
+    sunset: (() => {
+      const today = new Date();
+      today.setHours(19, 45, 0, 0); // 7:45 PM
+      return Math.floor(today.getTime() / 1000);
+    })()
   },
   timezone: -14400,
   id: 5128581,
@@ -42,44 +50,58 @@ const mockCurrentWeather: CurrentWeatherData = {
   cod: 200
 };
 
-const mockDailyForecasts: DailyForecast[] = Array(7).fill(null).map((_, i) => ({
-  dt: 1618317040 + (i * 86400),
-  sunrise: 1618282134 + (i * 100),
-  sunset: 1618333901 + (i * 100),
-  moonrise: 1618291800 + (i * 100),
-  moonset: 1618339740 + (i * 100),
-  moon_phase: 0.25,
-  temp: {
-    day: 39 + (i * 3),
-    min: 37 - (i % 2),
-    max: 41 + (i % 3),
-    night: 31 + (i % 4),
-    eve: 38 + (i % 3),
-    morn: 35 + (i % 2)
-  },
-  feels_like: {
-    day: 35 + (i * 2),
-    night: 28 + (i % 3),
-    eve: 33 + (i % 2),
-    morn: 30 + (i % 2)
-  },
-  pressure: 1015 + (i % 10),
-  humidity: 50 + (i % 20),
-  dew_point: 32 + (i % 5),
-  wind_speed: 16 - (i % 5),
-  wind_deg: 350 - (i * 10),
-  weather: [
-    { 
-      id: i % 2 === 0 ? 800 : (i % 3 === 0 ? 500 : 802), 
-      main: i % 2 === 0 ? "Clear" : (i % 3 === 0 ? "Rain" : "Clouds"),
-      description: i % 2 === 0 ? "clear sky" : (i % 3 === 0 ? "light rain" : "scattered clouds"), 
-      icon: i % 2 === 0 ? "01d" : (i % 3 === 0 ? "10d" : "03d") 
-    }
-  ],
-  clouds: 0,
-  pop: 0.2,
-  uvi: 6.7
-}));
+const mockDailyForecasts: DailyForecast[] = Array(7).fill(null).map((_, i) => {
+  // Create base date for this forecast day
+  const forecastDate = new Date();
+  forecastDate.setDate(forecastDate.getDate() + i); // Add days
+  
+  // Create sunrise time for this day
+  const sunriseTime = new Date(forecastDate);
+  sunriseTime.setHours(6, 15, 0, 0); // 6:15 AM
+  
+  // Create sunset time for this day
+  const sunsetTime = new Date(forecastDate);
+  sunsetTime.setHours(19, 45, 0, 0); // 7:45 PM
+  
+  return {
+    dt: Math.floor(forecastDate.getTime() / 1000),
+    sunrise: Math.floor(sunriseTime.getTime() / 1000),
+    sunset: Math.floor(sunsetTime.getTime() / 1000),
+    moonrise: 1618291800 + (i * 100),
+    moonset: 1618339740 + (i * 100),
+    moon_phase: 0.25,
+    temp: {
+      day: 39 + (i * 3),
+      min: 37 - (i % 2),
+      max: 41 + (i % 3),
+      night: 31 + (i % 4),
+      eve: 38 + (i % 3),
+      morn: 35 + (i % 2)
+    },
+    feels_like: {
+      day: 35 + (i * 2),
+      night: 28 + (i % 3),
+      eve: 33 + (i % 2),
+      morn: 30 + (i % 2)
+    },
+    pressure: 1015 + (i % 10),
+    humidity: 50 + (i % 20),
+    dew_point: 32 + (i % 5),
+    wind_speed: 16 - (i % 5),
+    wind_deg: 350 - (i * 10),
+    weather: [
+      { 
+        id: i % 2 === 0 ? 800 : (i % 3 === 0 ? 500 : 802), 
+        main: i % 2 === 0 ? "Clear" : (i % 3 === 0 ? "Rain" : "Clouds"),
+        description: i % 2 === 0 ? "clear sky" : (i % 3 === 0 ? "light rain" : "scattered clouds"), 
+        icon: i % 2 === 0 ? "01d" : (i % 3 === 0 ? "10d" : "03d") 
+      }
+    ],
+    clouds: 0,
+    pop: 0.2,
+    uvi: 6.7
+  };
+});
 
 const mockOtherCities: OtherCityWeather[] = [
   { name: "Seattle", country: "US", temp: 37, weather: [{ id: 500, main: "Rain", description: "light rain", icon: "10d" }] },
