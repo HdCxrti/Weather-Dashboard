@@ -177,17 +177,18 @@ export default function Home() {
       return false;
     }
   };
-
   const handleSearch = async (searchCity: string) => {
     if (searchCity.trim()) {
       // Validate if this is a real city before setting it
       const isValid = await validateCity(searchCity);
       
       if (isValid) {
-        setCity(searchCity);
+        // Extract just the city name part (without country/state)
+        const cityName = extractCityName(searchCity);
+        setCity(cityName);
         
         // Dispatch event for RadarMap to update - this is needed for the radar map to switch cities
-        const event = new CustomEvent("favoriteCitySelected", { detail: searchCity });
+        const event = new CustomEvent("favoriteCitySelected", { detail: cityName });
         window.dispatchEvent(event);
       } else {
         toast({
