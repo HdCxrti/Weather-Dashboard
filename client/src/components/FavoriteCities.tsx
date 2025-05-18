@@ -82,9 +82,23 @@ export default function FavoriteCities({
     setNewCity(query);
     searchCities(query);
   }, [searchCities]);
-  
+    // Validate city using OpenStreetMap Nominatim geocoding
+  const validateCity = useCallback(async (cityName: string): Promise<boolean> => {
+    if (!cityName.trim()) return false;
+    
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}`;
+    try {
+      const resp = await fetch(url, { headers: { "Accept-Language": "en" } });
+      const data = await resp.json();
+      return data && data.length > 0;
+    } catch (error) {
+      console.error("Error validating city:", error);
+      return false;
+    }
+  }, []);
+
   // Add city to favorites
-  const addCityToFavorites = useCallback((cityName: string) => {
+  const addCityToFavorites = useCallback(async (cityName: string) => {
     if (!cityName) return;
     
     if (favorites.includes(cityName)) {
@@ -92,6 +106,18 @@ export default function FavoriteCities({
         title: "Already in favorites",
         description: `${cityName} is already in your favorites`,
         variant: "default"
+      });
+      return;
+    }
+    
+    // Validate if this is a real city before adding it
+    const isValid = await validateCity(cityName);
+    
+    if (!isValid) {
+      toast({
+        title: "Invalid City",
+        description: `${cityName} doesn't appear to be a valid city`,
+        variant: "destructive"
       });
       return;
     }
@@ -114,7 +140,7 @@ export default function FavoriteCities({
     if (onAddFavorite) {
       onAddFavorite(cityName);
     }
-  }, [favorites, onFavoritesChange, toast, onAddFavorite]);
+  }, [favorites, onFavoritesChange, toast, onAddFavorite, validateCity]);
   
   // Remove city from favorites
   const removeCityFromFavorites = useCallback((cityName: string) => {

@@ -156,14 +156,39 @@ export default function Home() {
         variant: "destructive"
       });
     }
-  }, [otherCitiesError, toast]);
-  const handleSearch = (searchCity: string) => {
+  }, [otherCitiesError, toast]);  // Check if a city is valid using the OpenStreetMap Nominatim geocoding service
+  const validateCity = async (searchCity: string): Promise<boolean> => {
+    if (!searchCity.trim()) return false;
+    
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchCity)}`;
+    try {
+      const resp = await fetch(url, { headers: { "Accept-Language": "en" } });
+      const data = await resp.json();
+      return data && data.length > 0;
+    } catch (error) {
+      console.error("Error validating city:", error);
+      return false;
+    }
+  };
+
+  const handleSearch = async (searchCity: string) => {
     if (searchCity.trim()) {
-      setCity(searchCity);
+      // Validate if this is a real city before setting it
+      const isValid = await validateCity(searchCity);
       
-      // Dispatch event for RadarMap to update - this is needed for the radar map to switch cities
-      const event = new CustomEvent("favoriteCitySelected", { detail: searchCity });
-      window.dispatchEvent(event);
+      if (isValid) {
+        setCity(searchCity);
+        
+        // Dispatch event for RadarMap to update - this is needed for the radar map to switch cities
+        const event = new CustomEvent("favoriteCitySelected", { detail: searchCity });
+        window.dispatchEvent(event);
+      } else {
+        toast({
+          title: "Invalid City",
+          description: "Please enter a valid city name",
+          variant: "destructive"
+        });
+      }
     }
   };
   
