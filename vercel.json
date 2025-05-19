@@ -21,6 +21,6 @@
     }
   ],
   "env": {
-    "WEATHER_API_KEY": "@weather_api_key"
+    "WEATHERAPI_KEY": "fbd3658462f64cea8f0154659251605"
   }
 }
