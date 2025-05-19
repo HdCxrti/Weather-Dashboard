@@ -3,7 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import CurrentWeather from "@/components/CurrentWeather";
 import WeeklyForecast from "@/components/WeeklyForecast";
+import HourlyForecast from "@/components/HourlyForecast";
+import WeatherStats from "@/components/WeatherStats";
+import WeatherNewsSummary from "@/components/WeatherNewsSummary";
 import FavoriteCities from "@/components/FavoriteCities";
+import Footer from "@/components/Footer";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, AlertCircle } from "lucide-react";
@@ -87,6 +91,28 @@ const mockOtherCities: OtherCityWeather[] = [
   { name: "Istanbul", country: "TR", temp: 58, weather: [{ id: 800, main: "Clear", description: "clear sky", icon: "01n" }] },
   { name: "Dubai", country: "AE", temp: 71, weather: [{ id: 802, main: "Clouds", description: "scattered clouds", icon: "03d" }] }
 ];
+
+// Mock hourly forecast data
+const mockHourlyForecast = Array(24).fill(null).map((_, i) => {
+  const currentHour = new Date().getHours();
+  const forecastHour = new Date();
+  forecastHour.setHours(currentHour + i);
+  
+  return {
+    time: Math.floor(forecastHour.getTime() / 1000),
+    temp: 40 + Math.sin(i/6) * 8, // Temperature that varies throughout the day
+    feels_like: 38 + Math.sin(i/6) * 10,
+    humidity: 45 + Math.cos(i/8) * 20,
+    wind_speed: 8 + Math.sin(i/4) * 4,
+    weather: [{
+      id: i % 3 === 0 ? 800 : (i % 5 === 0 ? 500 : 802),
+      main: i % 3 === 0 ? "Clear" : (i % 5 === 0 ? "Rain" : "Clouds"),
+      description: i % 3 === 0 ? "clear sky" : (i % 5 === 0 ? "light rain" : "scattered clouds"),
+      icon: i % 3 === 0 ? "01d" : (i % 5 === 0 ? "10d" : "03d")
+    }],
+    chance_of_rain: i % 5 === 0 ? 40 : (i % 7 === 0 ? 20 : 0)
+  };
+});
 
 // Helper function to properly capitalize city names
 function toTitleCase(str: string): string {
@@ -186,10 +212,9 @@ export default function Home() {
   
   // If we don't have any favorite cities yet, show some example cities
   const displayedMockCities = filteredMockCities.length > 0 ? filteredMockCities : mockOtherCities;
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
+      <div className="w-full mx-auto p-4 md:p-8">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-semibold mb-4 md:mb-0">Weather Dashboard</h1>
@@ -239,6 +264,31 @@ export default function Home() {
                     units={units}
                   />
                 </div>
+
+                {/* Hourly Forecast Section */}
+                <div className="p-6 pt-0 border-t border-border/10 mt-6">
+                  <h3 className="text-lg font-medium mb-4">Hourly Forecast</h3>
+                  <HourlyForecast
+                    hourlyData={(weatherData as any).hourly || mockHourlyForecast}
+                    units={units}
+                    selectedCity={city}
+                  />
+                </div>
+
+                {/* Weather Stats Section */}
+                <div className="p-6 border-t border-border/10">
+                  <h3 className="text-lg font-medium mb-4">Weather Details</h3>
+                  <WeatherStats
+                    cityName={city}
+                    aqi={(weatherData as any).current?.air_quality?.pm2_5}
+                    uvIndex={(weatherData as any).current?.uvi || 5}
+                    humidity={(weatherData as any).current?.main?.humidity}
+                    dewPoint={(weatherData as any).current?.dew_point}
+                    precipitation={(weatherData as any).daily?.[0]?.pop * 100}
+                    windGust={(weatherData as any).current?.wind_gust}
+                    units={units}
+                  />
+                </div>
               </div>
             ) : isWeatherLoading ? (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl p-6 flex items-center justify-center min-h-[400px]">
@@ -271,26 +321,85 @@ export default function Home() {
                     units={units}
                   />
                 </div>
+
+                {/* Hourly Forecast Section */}
+                <div className="p-6 pt-0 border-t border-border/10 mt-6">
+                  <h3 className="text-lg font-medium mb-4">Hourly Forecast</h3>
+                  <HourlyForecast
+                    hourlyData={mockHourlyForecast}
+                    units={units}
+                    selectedCity={city}
+                  />
+                </div>
+
+                {/* Weather Stats Section */}
+                <div className="p-6 border-t border-border/10">
+                  <h3 className="text-lg font-medium mb-4">Weather Details</h3>
+                  <WeatherStats
+                    cityName={city}
+                    units={units}
+                  />
+                </div>
               </div>
             )}
+
+            {/* Weather News Section */}
+            <div className="mt-6 bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
+              <div className="p-6">
+                <h3 className="text-lg font-medium mb-4">Weather News & Updates</h3>
+                <WeatherNewsSummary 
+                  cityName={city}
+                  countryCode={hasRealWeatherData ? 
+                    (weatherData as any).current.sys.country : 
+                    mockCurrentWeather.sys.country}
+                />
+              </div>
+            </div>
           </div>
           
           {/* Favorite Cities component */}
-          <FavoriteCities 
-            citiesData={!otherCitiesError && otherCitiesData ? 
-              (otherCitiesData as OtherCityWeather[]) : 
-              displayedMockCities} 
-            isLoading={isOtherCitiesLoading && !otherCitiesError}
-            units={units}
-            favorites={favoriteCities}
-            onFavoritesChange={(updatedFavorites) => {
-              setFavoriteCities(updatedFavorites);
-            }}
-            onAddFavorite={(cityName) => {
-              setCity(cityName); // Switch to the new favorite city
-            }}
-          />
+          <div className="space-y-6">
+            <FavoriteCities 
+              citiesData={!otherCitiesError && otherCitiesData ? 
+                (otherCitiesData as OtherCityWeather[]) : 
+                displayedMockCities} 
+              isLoading={isOtherCitiesLoading && !otherCitiesError}
+              units={units}
+              favorites={favoriteCities}
+              onFavoritesChange={(updatedFavorites) => {
+                setFavoriteCities(updatedFavorites);
+              }}
+              onAddFavorite={(cityName) => {
+                setCity(cityName); // Switch to the new favorite city
+              }}
+            />
+
+            {/* Tips and Information Card */}
+            <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
+              <div className="p-6">
+                <h3 className="text-lg font-medium mb-3">Weather Tips</h3>
+                <div className="text-sm space-y-3 text-muted-foreground">
+                  <p>
+                    {hasRealWeatherData ? 
+                      ((weatherData as any).current.main.temp > 85 ? 
+                        "Stay hydrated and seek shade during peak sun hours." : 
+                        (weatherData as any).current.main.temp < 50 ? 
+                        "Bundle up in layers to stay warm in these cooler temperatures." :
+                        "Enjoy the pleasant weather today!") : 
+                      mockCurrentWeather.main.temp > 85 ? 
+                      "Stay hydrated and seek shade during peak sun hours." : 
+                      mockCurrentWeather.main.temp < 50 ? 
+                      "Bundle up in layers to stay warm in these cooler temperatures." :
+                      "Enjoy the pleasant weather today!"}
+                  </p>
+                  <p>Remember to check back for updated forecasts throughout the day.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+        
+        <Footer lastUpdated={new Date()} />
       </div>
     </div>
   );

@@ -18,9 +18,8 @@ export default function Footer({ lastUpdated = new Date() }: FooterProps) {
     });
   };
 
-  return (
-    <footer className="mt-8 py-6 border-t border-border/30">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
+  return (    <footer className="mt-8 py-6 border-t border-border/30">
+      <div className="w-full mx-auto px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <h4 className="text-sm font-medium mb-3">Weather Dashboard</h4>
