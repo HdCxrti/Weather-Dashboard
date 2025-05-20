@@ -11,6 +11,7 @@ import HourlyForecast from "@/components/HourlyForecast";
 import TemperatureChart from "@/components/TemperatureChart";
 import PrecipitationChart from "@/components/PrecipitationChart";
 import DetailedHourlyForecast from "@/components/DetailedHourlyForecast";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import Footer from "@/components/Footer";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
@@ -160,6 +161,7 @@ export default function Home() {
   const [city, setCity] = useState<string>("New York");
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
   const [favoriteCities, setFavoriteCities] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
   // Load favorite cities from localStorage on mount
@@ -286,12 +288,12 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-semibold mb-4 md:mb-0">Weather Dashboard</h1>
             <ThemeToggle />
-          </div>
-          <SearchBar 
+          </div>          <SearchBar 
             onSearch={handleSearch} 
             onUnitToggle={toggleUnits} 
             units={units} 
             initialCity={city}
+            onGeolocation={handleGeolocation}
           />
         </div>
         

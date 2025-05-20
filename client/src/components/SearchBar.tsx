@@ -1,16 +1,17 @@
 import { useState, KeyboardEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, MapPin } from "lucide-react";
 
 interface SearchBarProps {
   onSearch: (city: string) => void;
   onUnitToggle: () => void;
   units: "metric" | "imperial";
   initialCity: string;
+  onGeolocation?: () => void;
 }
 
-export default function SearchBar({ onSearch, onUnitToggle, units, initialCity }: SearchBarProps) {
+export default function SearchBar({ onSearch, onUnitToggle, units, initialCity, onGeolocation }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialCity);
   const handleSearch = () => {
     // Pass the search query to the parent component
@@ -22,7 +23,8 @@ export default function SearchBar({ onSearch, onUnitToggle, units, initialCity }
     if (e.key === "Enter") {
       handleSearch();
     }
-  };  // Use theme variables from tailwind config
+  };  
+  // Use theme variables from tailwind config
   const bgColor = "bg-background";
   const inputTextColor = "text-foreground";
   const placeholderColor = "placeholder:text-muted-foreground";
@@ -71,6 +73,14 @@ export default function SearchBar({ onSearch, onUnitToggle, units, initialCity }
           </div>
         </div>
       </div>
+      <Button
+        onClick={onGeolocation}
+        className={`bg-muted text-muted-foreground hover:bg-muted/80 rounded-full h-10 w-10 p-0 transition-all`}
+        aria-label="Use Geolocation"
+        title="Use Geolocation"
+      >
+        <MapPin className="h-5 w-5" />
+      </Button>
     </div>
   );
 }

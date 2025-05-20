@@ -334,6 +334,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reverse geocoding endpoint to get city name from coordinates
+  app.get("/api/geocode/reverse", async (req: Request, res: Response) => {
+    try {
+      const lat = req.query.lat as string;
+      const lon = req.query.lon as string;
+      
+      if (!lat || !lon) {
+        return res.status(400).json({ error: "Latitude and longitude are required" });
+      }
+
+      const response = await axios.get(`${WEATHERAPI_BASE_URL}/search.json`, {
+        params: {
+          key: WEATHERAPI_KEY,
+          q: `${lat},${lon}`
+        }
+      });
+
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        // Return the first result
+        const location = response.data[0];
+        return res.json({
+          name: location.name,
+          region: location.region,
+          country: location.country,
+          lat: location.lat,
+          lon: location.lon
+        });
+      } else {
+        return res.status(404).json({ error: "No location found for these coordinates" });
+      }
+    } catch (error) {
+      console.error("Error in reverse geocoding:", error);
+      if (axios.isAxiosError(error)) {
+        return res.status(error.response?.status || 500).json({
+          error: "Error from weather API",
+          message: error.response?.data || error.message
+        });
+      }
+      return res.status(500).json({ error: "Internal server error during reverse geocoding" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
