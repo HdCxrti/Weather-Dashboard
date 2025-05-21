@@ -49,8 +49,10 @@ self.addEventListener("activate", (event) => {
 
 // Fetch strategies with network-first for API calls, cache-first for static assets
 self.addEventListener("fetch", (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
+  // Skip cross-origin requests and WebSocket requests
+  if (!event.request.url.startsWith(self.location.origin) || 
+      event.request.url.startsWith('ws:') || 
+      event.request.url.startsWith('wss:')) {
     return;
   }
 

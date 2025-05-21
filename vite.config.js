@@ -22,6 +22,18 @@ const config = {
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },
+  server: {
+    // Use relative paths for hmr websocket requests
+    hmr: {
+      protocol: 'ws',
+      host: undefined, // Let Vite infer the host
+      port: undefined, // Let Vite infer the port
+    },
+  },
+  // Disable HMR in production builds
+  define: {
+    __HMR_DISABLED__: process.env.NODE_ENV === 'production',
+  },
 };
 
 // Export as ESM default

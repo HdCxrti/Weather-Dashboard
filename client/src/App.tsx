@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import ConnectionStatus from "@/components/ConnectionStatus";
 
 function Router() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <ConnectionStatus />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

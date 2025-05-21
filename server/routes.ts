@@ -4,8 +4,14 @@ import { storage } from "./storage";
 import axios from "axios";
 
 // Get the API key from environment variables
-console.log("WeatherAPI Key exists:", !!process.env.WEATHERAPI_KEY);
 const WEATHERAPI_KEY = process.env.WEATHERAPI_KEY;
+console.log("WeatherAPI Key exists:", !!WEATHERAPI_KEY);
+
+// Validate API key to prevent silent failures
+if (!WEATHERAPI_KEY) {
+  console.error("WARNING: WEATHERAPI_KEY environment variable is not set. Weather functionality will not work properly.");
+}
+
 const WEATHERAPI_BASE_URL = "https://api.weatherapi.com/v1";
 
 // Helper function to properly capitalize city names
