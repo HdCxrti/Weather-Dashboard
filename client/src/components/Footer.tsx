@@ -22,7 +22,7 @@ export default function Footer({ lastUpdated = new Date() }: FooterProps) {
       <div className="w-full mx-auto px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <h4 className="text-sm font-medium mb-3">Weather Dashboard</h4>
+            <h4 className="text-sm font-medium mb-3">Jake's Weather Dashboard</h4>
             <p className="text-xs text-muted-foreground">
               Providing accurate and detailed weather information for locations worldwide.
               Plan your day with confidence using our comprehensive forecasts.
@@ -41,11 +41,9 @@ export default function Footer({ lastUpdated = new Date() }: FooterProps) {
           
           <div>
             <h4 className="text-sm font-medium mb-3">About</h4>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li className="flex items-center">
-                <Github className="h-3.5 w-3.5 mr-1.5" />
-                <a href="https://github.com/your-username/Weather-Dashboard" className="hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">
-                  GitHub Repository
+            <ul className="text-xs text-muted-foreground space-y-1">              <li className="flex items-center">
+                <Github className="h-3.5 w-3.5 mr-1.5" />                <a href="https://github.com/YourGitHubUsername/Weather-Dashboard" className="hover:text-foreground transition-colors" target="_blank" rel="noopener noreferrer">
+                  Jake's GitHub Repository
                 </a>
               </li>
               <li>Built with React, TypeScript, and Tailwind CSS</li>
@@ -53,10 +51,8 @@ export default function Footer({ lastUpdated = new Date() }: FooterProps) {
             </ul>
           </div>
         </div>
-        
-        <div className="mt-6 pt-4 border-t border-border/10 flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-xs text-muted-foreground mb-2 sm:mb-0">
-            © {new Date().getFullYear()} Weather Dashboard. All rights reserved.
+          <div className="mt-6 pt-4 border-t border-border/10 flex flex-col sm:flex-row justify-between items-center">          <p className="text-xs text-muted-foreground mb-2 sm:mb-0">
+            © {new Date().getFullYear()} Jake's Weather Dashboard. All rights reserved.
           </p>
           <div className="flex items-center space-x-4">
             <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">

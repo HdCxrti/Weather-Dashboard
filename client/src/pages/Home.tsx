@@ -12,6 +12,9 @@ import TemperatureChart from "@/components/TemperatureChart";
 import PrecipitationChart from "@/components/PrecipitationChart";
 import DetailedHourlyForecast from "@/components/DetailedHourlyForecast";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import WeatherBackground from "@/components/WeatherBackground";
+import ShareWeather from "@/components/ShareWeather";
+import PWAInstallButton from "@/components/PWAInstallButton";
 import Footer from "@/components/Footer";
 import { WeatherData, OtherCityWeather, CurrentWeatherData, DailyForecast } from "@/types/weather";
 import { useToast } from "@/hooks/use-toast";
@@ -164,6 +167,67 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
+  // Handle geolocation
+  const handleGeolocation = () => {
+    if (navigator.geolocation) {
+      setIsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            // Call a reverse geocoding API to get the city name
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            // Use OpenStreetMap's Nominatim API for reverse geocoding
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+            );
+            const data = await response.json();
+            
+            if (data && data.address && data.address.city) {
+              setCity(data.address.city);
+            } else if (data && data.address && data.address.town) {
+              setCity(data.address.town);
+            } else if (data && data.address && data.address.village) {
+              setCity(data.address.village);
+            } else {
+              toast({
+                title: 'Location Error',
+                description: 'Could not determine your city. Please search manually.',
+                variant: 'destructive'
+              });
+            }
+            setIsLoading(false);
+          } catch (error) {
+            console.error('Error fetching location:', error);
+            toast({
+              title: 'Location Error',
+              description: 'Could not determine your city. Please search manually.',
+              variant: 'destructive'
+            });
+            setIsLoading(false);
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          toast({
+            title: 'Geolocation Error',
+            description: error.message || 'Unable to access your location',
+            variant: 'destructive'
+          });
+          setIsLoading(false);
+        },
+        { timeout: 10000 }
+      );
+    } else {
+      toast({
+        title: 'Geolocation Not Supported',
+        description: 'Your browser does not support geolocation',
+        variant: 'destructive'
+      });
+    }
+  };
+  
   // Load favorite cities from localStorage on mount
   useEffect(() => {
     const storedFavorites = localStorage.getItem("favoriteCities");
@@ -283,12 +347,16 @@ export default function Home() {
   const displayedMockCities = filteredMockCities.length > 0 ? filteredMockCities : mockOtherCities;
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="w-full mx-auto p-4 md:p-8">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-semibold mb-4 md:mb-0">Weather Dashboard</h1>
+      {hasRealWeatherData && (        <WeatherBackground 
+          weatherCode={(weatherData as any).current.weather[0].id} 
+          isNight={(weatherData as any).current.dt > (weatherData as any).current.sys.sunset || 
+                  (weatherData as any).current.dt < (weatherData as any).current.sys.sunrise}
+        />
+      )}
+      <div className="w-full mx-auto p-4 md:p-8">        <div className="flex flex-col md:flex-row justify-between items-center mb-6">          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-semibold mb-4 md:mb-0">Jake's Weather Dashboard</h1>
             <ThemeToggle />
-          </div>          <SearchBar 
+            <PWAInstallButton />          </div><SearchBar 
             onSearch={handleSearch} 
             onUnitToggle={toggleUnits} 
             units={units} 
@@ -306,11 +374,16 @@ export default function Home() {
               <p className="text-sm">Using demo data - API key may be invalid or still activating.</p>
             </div>
           </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        )}        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
-            {hasRealWeatherData ? (
+            {isWeatherLoading ? (
+              <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
+                <div className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+                  <LoadingSpinner size={40} className="mb-4" />
+                  <p className="text-muted-foreground">Loading weather data...</p>
+                </div>
+              </div>
+            ): hasRealWeatherData ? (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
                 <div className="p-6">
                   <h2 className="text-xl font-medium">
@@ -409,8 +482,7 @@ export default function Home() {
                     units={units}
                   />
                 </div>
-              </div>
-            )}
+              </div>            )}
 
             {/* Weather News Section */}
             <div className="mt-6 bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
@@ -418,7 +490,7 @@ export default function Home() {
                 <h3 className="text-lg font-medium mb-4">Weather News & Updates</h3>
                 <WeatherNewsSummary 
                   cityName={city}
-                  countryCode={hasRealWeatherData ? 
+                  countryCode={!isLoading && !isWeatherLoading && hasRealWeatherData ? 
                     (weatherData as any).current.sys.country : 
                     mockCurrentWeather.sys.country}
                 />
@@ -496,6 +568,5 @@ export default function Home() {
         
         <Footer lastUpdated={new Date()} />
       </div>
-    </div>
-  );
+    </div>  );
 }

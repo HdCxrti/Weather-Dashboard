@@ -35,6 +35,28 @@ function formatAlertDate(timestamp: number): string {
   });
 }
 
+// Helper function to format the time remaining for an alert
+function formatTimeRemaining(endTimestamp: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = endTimestamp - now;
+  
+  if (diff <= 0) return "Expired";
+  
+  const hours = Math.floor(diff / 3600);
+  const minutes = Math.floor((diff % 3600) / 60);
+  
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `${days} day${days > 1 ? 's' : ''} remaining`;
+  }
+  
+  if (hours > 0) {
+    return `${hours} hr ${minutes} min remaining`;
+  }
+  
+  return `${minutes} min remaining`;
+}
+
 // Sample mock alerts for demonstration
 const mockAlerts: WeatherAlert[] = [
   {
@@ -97,15 +119,22 @@ export default function WeatherAlerts({ alerts = mockAlerts, cityName }: Weather
           >
             <div className="flex items-start">
               <AlertCircle className="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" />
-              <div className="w-full">
-                <div className="flex justify-between items-start">
+              <div className="w-full">                <div className="flex justify-between items-start">
                   <h4 className="font-medium">{alert.title}</h4>
                   <span className="text-xs capitalize px-2 py-0.5 rounded-full bg-background/20">
                     {alert.severity}
                   </span>
                 </div>
+                <div className="text-xs mt-1 flex justify-between">
+                  <div>
+                    {formatAlertDate(alert.start)} {formatAlertTime(alert.start)} - {formatAlertDate(alert.end)} {formatAlertTime(alert.end)}
+                  </div>
+                  <div className="font-medium">
+                    {formatTimeRemaining(alert.end)}
+                  </div>
+                </div>
                 <div className="text-xs mt-1">
-                  {formatAlertDate(alert.start)} {formatAlertTime(alert.start)} - {formatAlertDate(alert.end)} {formatAlertTime(alert.end)}
+                  {formatTimeRemaining(alert.end)}
                 </div>
                 
                 {expandedAlertId === alert.id && (

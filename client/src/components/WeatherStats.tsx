@@ -1,4 +1,5 @@
 import { Cloud, Droplet, Gauge, Sunrise, Sunset, Thermometer } from "lucide-react";
+import AQIGauge from "./AQIGauge";
 
 interface WeatherStatsProps {
   cityName: string;
@@ -58,17 +59,9 @@ export default function WeatherStats({
     <div className="bg-accent rounded-xl p-6 shadow-sm text-foreground">
       <h3 className="font-medium mb-4">Weather Insights</h3>
       
-      <div className="grid grid-cols-2 gap-4">
-        {/* Air Quality */}
-        <div className="bg-card/80 rounded-lg p-3">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-muted-foreground">Air Quality</span>
-            <Cloud className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-medium">{aqi}</span>
-            <span className={`text-xs ${aqiInfo.color}`}>{aqiInfo.label}</span>
-          </div>
+      <div className="grid grid-cols-2 gap-4">        {/* Air Quality */}
+        <div className="bg-card/80 rounded-lg p-3 col-span-2">
+          <AQIGauge aqi={aqi} />
         </div>
         
         {/* UV Index */}

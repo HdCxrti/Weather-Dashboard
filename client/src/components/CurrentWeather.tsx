@@ -1,4 +1,5 @@
 import WeatherIcon from "@/components/WeatherIcon";
+import ShareWeather from "@/components/ShareWeather";
 import { CurrentWeatherData } from "@/types/weather";
 import { Eye, Droplet, Wind, Gauge, Cloud } from "lucide-react";
 
@@ -198,12 +199,22 @@ export default function CurrentWeather({ weatherData, city, units }: CurrentWeat
             <div className="absolute top-0 left-1/4 transform -translate-y-1/2 w-3 h-3 bg-yellow-300 rounded-full"></div>
             <div className="absolute top-0 right-1/4 transform -translate-y-1/2 w-3 h-3 bg-muted-foreground rounded-full"></div>
           </div>
-          
-          <div className="flex justify-between items-center mt-4">
+            <div className="flex justify-between items-center mt-4">
             <h3 className="text-lg font-medium">Sunset</h3>
             <span className="text-xl">
               {formatSunsetTime()}
             </span>
+          </div>
+          
+          {/* Share Weather Section */}
+          <div className="mt-6 pt-4 border-t border-border/30">
+            <h3 className="text-sm text-muted-foreground mb-2">Share this forecast:</h3>
+            <ShareWeather 
+              city={city}
+              temperature={Math.round(weatherData.main.temp)}
+              condition={weatherData.weather[0].description}
+              units={units}
+            />
           </div>
         </div>
       </div>

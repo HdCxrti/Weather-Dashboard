@@ -1,7 +1,7 @@
 import { useState, KeyboardEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, Loader2 } from "lucide-react";
 
 interface SearchBarProps {
   onSearch: (city: string) => void;
@@ -13,6 +13,7 @@ interface SearchBarProps {
 
 export default function SearchBar({ onSearch, onUnitToggle, units, initialCity, onGeolocation }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialCity);
+  const [isGeolocating, setIsGeolocating] = useState(false);
   const handleSearch = () => {
     // Pass the search query to the parent component
     // The actual cleaning of city name will happen in Home.tsx
@@ -72,14 +73,24 @@ export default function SearchBar({ onSearch, onUnitToggle, units, initialCity, 
             <span className="sr-only">{units === "metric" ? "Metric" : "Imperial"}</span>
           </div>
         </div>
-      </div>
-      <Button
-        onClick={onGeolocation}
+      </div>      <Button        onClick={() => {
+          if (onGeolocation) {
+            setIsGeolocating(true);
+            onGeolocation();
+            // Reset the loading state after a timeout in case the geolocation fails silently
+            setTimeout(() => setIsGeolocating(false), 10000);
+          }
+        }}
+        disabled={isGeolocating}
         className={`bg-muted text-muted-foreground hover:bg-muted/80 rounded-full h-10 w-10 p-0 transition-all`}
         aria-label="Use Geolocation"
         title="Use Geolocation"
       >
-        <MapPin className="h-5 w-5" />
+        {isGeolocating ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <MapPin className="h-5 w-5" />
+        )}
       </Button>
     </div>
   );
