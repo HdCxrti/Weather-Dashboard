@@ -2,11 +2,19 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log, logEnvironmentInfo } from "./vite";
+import { handleWebSocketRequests, addSecurityHeaders, setupHealthCheck } from "./middleware";
 
 // Log environment information for debugging
 logEnvironmentInfo();
 
 const app = express();
+
+// Add security headers and WebSocket handling middlewares
+app.use(addSecurityHeaders);
+app.use(handleWebSocketRequests);
+
+// Setup health check endpoint
+setupHealthCheck(app);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
