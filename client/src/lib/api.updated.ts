@@ -64,9 +64,6 @@ export async function getCurrentWeather(city: string, units: 'metric' | 'imperia
 /**
  * Get the current weather by coordinates (latitude and longitude)
  */
-/**
- * Get the current weather by coordinates (latitude and longitude)
- */
 export async function getWeatherByCoordinates(
   lat: number | string,
   lon: number | string, 

@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Globe, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { getFavoriteCitiesWeather } from "@/lib/api";
+import { getFavoriteCitiesWeather, getWeatherByCoordinates } from "@/lib/api";
 
 // Mock data for demonstration when API key isn't working
 const mockCurrentWeather: CurrentWeatherData = {
@@ -39,7 +39,8 @@ const mockCurrentWeather: CurrentWeatherData = {
   visibility: 10000,
   wind: { speed: 16, deg: 350 },
   clouds: { all: 0 },
-  dt: 1618317040,  sys: {
+  dt: 1618317040,  
+  sys: {
     type: 1,
     id: 5141,
     country: "US",
@@ -54,12 +55,14 @@ const mockCurrentWeather: CurrentWeatherData = {
       today.setHours(19, 45, 0, 0); // 7:45 PM
       return Math.floor(today.getTime() / 1000);
     })()
-  },  timezone: -14400,
+  },
+  timezone: -14400,
   id: 5128581,
-  name: "Current Location",
+  name: "New York",
   cod: 200
 };
 
+// Mock daily forecasts for when API isn't working
 const mockDailyForecasts: DailyForecast[] = Array(7).fill(null).map((_, i) => {
   // Create base date for this forecast day
   const forecastDate = new Date();
@@ -160,12 +163,19 @@ function extractCityName(cityQuery: string): string {
 }
 
 export default function Home() {  
-  const [city, setCity] = useState<string>("Current Location");
+  const [city, setCity] = useState<string>("New York");
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
   const [favoriteCities, setFavoriteCities] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Handle geolocation
+  // Track location coordinates
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [usingCoordinates, setUsingCoordinates] = useState<boolean>(false);
+  
+  const { toast } = useToast();
+  
+  // Handle geolocation request
   const handleGeolocation = () => {
     if (navigator.geolocation) {
       setIsLoading(true);
@@ -173,18 +183,18 @@ export default function Home() {
         async (position) => {
           try {
             // Get the latitude and longitude
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
             
             // Store the coordinates for direct weather API call
-            setLatitude(latitude);
-            setLongitude(longitude);
+            setLatitude(lat);
+            setLongitude(lon);
             setUsingCoordinates(true);
             
             // Also try to get the city name for display purposes
             try {
               const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`
               );
               const data = await response.json();
               
@@ -232,10 +242,6 @@ export default function Home() {
       });
     }
   };
-    // Use geolocation on component mount to get the user's current location
-  useEffect(() => {
-    handleGeolocation();
-  }, []);
   
   // Load favorite cities from localStorage on mount
   useEffect(() => {
@@ -259,16 +265,13 @@ export default function Home() {
         setFavoriteCities([]);
       }
     }
-  }, []);// Save favorite cities to localStorage whenever they change
+  }, []);
+  
+  // Save favorite cities to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("favoriteCities", JSON.stringify(favoriteCities));
   }, [favoriteCities]);
-  
-  // Track location coordinates
-  const [latitude, setLatitude] = useState<number | null>(null);
-  const [longitude, setLongitude] = useState<number | null>(null);
-  const [usingCoordinates, setUsingCoordinates] = useState<boolean>(false);
-  
+
   // Fetch current weather and forecast data
   const { data: weatherData, isLoading: isWeatherLoading, error: weatherError } = useQuery({
     queryKey: [
@@ -278,6 +281,14 @@ export default function Home() {
     ],
     retry: 1
   });
+  
+  // Reset to city-based search when selecting a city manually
+  useEffect(() => {
+    // Only reset coordinates when city changes by user action (not by geolocation)
+    if (!isLoading) {
+      setUsingCoordinates(false);
+    }
+  }, [city]);
   
   // Fetch favorite cities weather data
   const { data: otherCitiesData, isLoading: isOtherCitiesLoading, error: otherCitiesError } = useQuery({
@@ -296,7 +307,9 @@ export default function Home() {
         variant: "destructive"
       });
     }
-  }, [otherCitiesError, toast]);  // Check if a city is valid using the OpenStreetMap Nominatim geocoding service
+  }, [otherCitiesError, toast]);
+
+  // Check if a city is valid using the OpenStreetMap Nominatim geocoding service
   const validateCity = async (searchCity: string): Promise<boolean> => {
     if (!searchCity.trim()) return false;
     
@@ -310,6 +323,7 @@ export default function Home() {
       return false;
     }
   };
+  
   const handleSearch = async (searchCity: string) => {
     if (searchCity.trim()) {
       // Validate if this is a real city before setting it
@@ -319,6 +333,7 @@ export default function Home() {
         // Extract just the city name part (without country/state)
         const cityName = extractCityName(searchCity);
         setCity(cityName);
+        setUsingCoordinates(false); // Switch back to city-based lookup
         
         // Dispatch event for RadarMap to update - this is needed for the radar map to switch cities
         const event = new CustomEvent("favoriteCitySelected", { detail: cityName });
@@ -361,18 +376,24 @@ export default function Home() {
   
   // If we don't have any favorite cities yet, show some example cities
   const displayedMockCities = filteredMockCities.length > 0 ? filteredMockCities : mockOtherCities;
+  
   return (
-    <div className="min-h-screen bg-background text-foreground">      {hasRealWeatherData && (
+    <div className="min-h-screen bg-background text-foreground">
+      {hasRealWeatherData && (
         <WeatherBackground 
           weatherCode={(weatherData as any).current.weather[0].id} 
           isNight={(weatherData as any).current.dt > (weatherData as any).current.sys.sunset || 
                   (weatherData as any).current.dt < (weatherData as any).current.sys.sunrise}
         />
       )}
-      <div className="w-full mx-auto p-4 md:p-8">        <div className="flex flex-col md:flex-row justify-between items-center mb-6">          <div className="flex items-center gap-4">
+      <div className="w-full mx-auto p-4 md:p-8">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
             <h1 className="text-2xl font-semibold mb-4 md:mb-0">Jake's Weather Dashboard</h1>
             <ThemeToggle />
-            <PWAInstallButton />          </div><SearchBar 
+            <PWAInstallButton />
+          </div>
+          <SearchBar 
             onSearch={handleSearch} 
             onUnitToggle={toggleUnits} 
             units={units} 
@@ -390,7 +411,9 @@ export default function Home() {
               <p className="text-sm">Using demo data - API key may be invalid or still activating.</p>
             </div>
           </div>
-        )}        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        )}
+        
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             {isWeatherLoading ? (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
@@ -448,15 +471,6 @@ export default function Home() {
                   />
                 </div>
               </div>
-            ) : isWeatherLoading ? (
-              <div className="bg-card text-card-foreground shadow-sm rounded-3xl p-6 flex items-center justify-center min-h-[400px]">
-                <div className="flex flex-col items-center">
-                  <Globe className="h-16 w-16 text-muted-foreground animate-pulse" />
-                  <p className="mt-4 text-muted-foreground">
-                    Loading weather data...
-                  </p>
-                </div>
-              </div>
             ) : (
               <div className="bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
                 <div className="p-6">
@@ -498,7 +512,8 @@ export default function Home() {
                     units={units}
                   />
                 </div>
-              </div>            )}
+              </div>
+            )}
 
             {/* Weather News Section */}
             <div className="mt-6 bg-card text-card-foreground shadow-sm rounded-3xl overflow-hidden">
@@ -524,7 +539,8 @@ export default function Home() {
           </div>
           
           {/* Sidebar components */}
-          <div className="space-y-6">            <FavoriteCitiesSimple 
+          <div className="space-y-6">
+            <FavoriteCitiesSimple 
               citiesData={!otherCitiesError && otherCitiesData ? 
                 (otherCitiesData as OtherCityWeather[]) : 
                 displayedMockCities} 
@@ -537,7 +553,10 @@ export default function Home() {
               onAddFavorite={(cityName) => {
                 setCity(cityName); // Switch to the new favorite city
               }}
-            />            {/* Temperature Chart */}            <div className="bg-card text-card-foreground shadow-md rounded-3xl overflow-hidden">
+            />
+
+            {/* Temperature Chart */}
+            <div className="bg-card text-card-foreground shadow-md rounded-3xl overflow-hidden">
               <div className="p-5">
                 <TemperatureChart 
                   hourlyData={hasRealWeatherData ? (weatherData as any).hourly || mockHourlyForecast : mockHourlyForecast} 
@@ -548,7 +567,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Precipitation Chart */}            <div className="mt-6 bg-card text-card-foreground shadow-md rounded-3xl overflow-hidden">
+            {/* Precipitation Chart */}
+            <div className="mt-6 bg-card text-card-foreground shadow-md rounded-3xl overflow-hidden">
               <div className="p-5">
                 <PrecipitationChart 
                   hourlyData={hasRealWeatherData ? (weatherData as any).hourly || mockHourlyForecast : mockHourlyForecast}
@@ -584,5 +604,6 @@ export default function Home() {
         
         <Footer lastUpdated={new Date()} />
       </div>
-    </div>  );
+    </div>
+  );
 }

@@ -57,7 +57,8 @@ const mapWeatherCondition = (condition: any) => ({
   icon: condition.icon
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {  // Get weather for a city or by coordinates
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Get weather for a city or by coordinates
   app.get("/api/weather", async (req: Request, res: Response) => {
     try {
       const city = req.query.city as string;
@@ -71,7 +72,8 @@ export async function registerRoutes(app: Express): Promise<Server> {  // Get we
       if (city) {
         query = city;
       } else if (lat && lon) {
-        query = `${lat},${lon}`;      } else {
+        query = `${lat},${lon}`;
+      } else {
         return res.status(400).json({ message: "Either city or lat/lon parameters are required" });
       }
       
@@ -83,18 +85,11 @@ export async function registerRoutes(app: Express): Promise<Server> {  // Get we
           days: 7,
           aqi: "yes",
           alerts: "no"
-        },
-        timeout: 10000,  // Add a 10 second timeout
-        headers: {
-          'User-Agent': 'WeatherDashboard/1.0'
         }
       });
-        console.log('Weather API response received');
-
+      
       if (!response.data) {
-        console.warn("No data received from Weather API, falling back to mock data");
-        // Instead of sending an error, send mock data
-        return res.json(generateMockWeatherData(query, units));
+        return res.status(404).json({ message: "City or weather data not found" });
       }
       
       // Apply proper capitalization to the city name from the API response
@@ -194,22 +189,15 @@ export async function registerRoutes(app: Express): Promise<Server> {  // Get we
         daily: dailyForecasts
       };
       
-      res.json(combinedData);    } catch (error) {
+      res.json(combinedData);
+    } catch (error) {
       console.error("Weather API error:", error);
       if (axios.isAxiosError(error)) {
-        console.error("Axios error details:", {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          errorMessage: error.message
-        });
         res.status(error.response?.status || 500).json({ 
-          message: error.response?.data?.message || error.message || "Error fetching weather data",
-          details: error.response?.data || {}
+          message: error.response?.data?.message || "Error fetching weather data" 
         });
       } else {
-        console.error("Non-Axios error:", error);
-        res.status(500).json({ message: error instanceof Error ? error.message : "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
       }
     }
   });
@@ -251,7 +239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {  // Get we
       });
       
       const citiesData = await Promise.all(cityWeatherPromises);
-      res.json(citiesData);    } catch (error) {
+      res.json(citiesData);
+    } catch (error) {
       console.error("Other cities API error:", error);
       if (axios.isAxiosError(error)) {
         res.status(error.response?.status || 500).json({ 
@@ -403,6 +392,6 @@ export async function registerRoutes(app: Express): Promise<Server> {  // Get we
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  const server = createServer(app);
+  return server;
 }
