@@ -59,10 +59,9 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
-
-  // Use environment PORT variable or fallback to 3000
-  // Port 5000 is commonly used by Windows services
-  const port = parseInt(process.env.PORT || "8080", 10);
+  // Use environment PORT variable or fallback to 3001
+  // Port 5000 is commonly used by Windows services, 8080 is a common default
+  const port = parseInt(process.env.PORT || "3001", 10);
   
   // Try multiple ports if the preferred one is in use
   function startServer(portToUse: number) {
@@ -74,8 +73,7 @@ app.use((req, res, next) => {
         } else {
           console.error('Server error:', err);
         }
-      })
-      .on('listening', () => {
+      })      .on('listening', () => {
         const address = server.address();
         const actualPort = typeof address === 'object' && address ? address.port : portToUse;
         console.log(`Server running at http://localhost:${actualPort}`);
